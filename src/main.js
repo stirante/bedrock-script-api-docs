@@ -40,11 +40,21 @@ if (fs.existsSync('./failed.txt')) {
 
 // Generate the main index.html file
 let fullIndex = `<html>
-    <head>
-        <title>Minecraft Script API</title>
-        </head>
-        <body>
-            <h1>Minecraft <span style="text-decoration: line-through;">Scripting</span> Script API</h1>`
+<head>
+    <title>Minecraft Script API</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="tsd-page-toolbar">
+        <div class="tsd-toolbar-contents container">
+            <div id="tsd-search" class="table-cell">
+                <span class="title" style="font-weight: bold;">Minecraft Script API</span>
+            </div>
+        </div>
+    </header>
+    <div class="container container-main">
+        <div class="tsd-panel">
+            <ul>`
 
 for (const p of packages) {
   let pack = await fetchNpmPackage(p.name);
@@ -79,27 +89,43 @@ for (const p of packages) {
       return `<li><a href="/script/${p.path}/${file}/index.html">${file}</a></li>`;
     }).join('\n');
   
-  let index = `<html>
-      <head>
-          <title>${p.name} API</title>
-          </head>
-          <body>
-              <h1>${p.name} API</h1>
-              <ul>
-                  ${availableVersions}
-              </ul>
-          </body>
-      </html>`;
+    let index = `<html>
+    <head>
+        <title>${p.name}</title>
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body>
+        <header class="tsd-page-toolbar">
+            <div class="tsd-toolbar-contents container">
+                <div id="tsd-search" class="table-cell">
+                    <span class="title" style="font-weight: bold;">${p.name}</span>
+                </div>
+            </div>
+        </header>
+        <div class="container container-main">
+            <div class="tsd-panel">
+                <ul>
+                ${availableVersions}
+                </ul>
+            </div>
+        </body>
+    </div>
+</html>`
   fs.writeFileSync(`./docs/${p.path}/index.html`, index);
-  fullIndex += `<h2><a href="/script/${p.path}/index.html">${p.name}</a></h2>\n`;
+  fullIndex += `<li><h2><a href="/script/${p.path}/index.html">${p.name}</a></h2></li>\n`;
 }
 
 fullIndex += `
+</ul>
+</div>
 </body>
+</div>
 </html>`;
 
 // Write the main index.html file
 fs.writeFileSync('./docs/index.html', fullIndex);
+// Copy the style.css file
+fs.copyFileSync('./style.css', './docs/style.css');
 
 // Write the failed packages file
 fs.writeFileSync('./failed.txt', failed.join('\n'));
