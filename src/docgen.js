@@ -20,8 +20,14 @@ function generateTypeDoc(path, url, version, failed) {
             reject(err);
           })
           .on('finish', () => {
-            resolve();
             fs.copyFileSync('./tsconfig.json.template', './tmp/package/tsconfig.json');
+            let p = JSON.parse(fs.readFileSync('./tmp/package/package.json', 'utf8'));
+            // Remove ^ from all dependencies
+            for (let dep in p.dependencies) {
+              p.dependencies[dep] = p.dependencies[dep].replace('^', '');
+            }
+            fs.writeFileSync('./tmp/package/package.json', JSON.stringify(p, null, 2));
+            resolve();
           });
       });
     })
