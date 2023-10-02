@@ -4,6 +4,8 @@ import fetch from 'node-fetch';
 import { exec, execSync } from 'child_process';
 import fs from 'fs';
 import { copyFolderSync } from './file_utils.js';
+import { generateStructure } from './structure_gen.js';
+import { fetchNpmPackageVersion } from './npm_utils.js';
 
 function generateTypeDoc(path, url, version, failed) {
   return fetch(url)
@@ -47,17 +49,61 @@ function generateTypeDoc(path, url, version, failed) {
         child.stderr.pipe(process.stderr);
       });
     })
+    // Copy the generated docs to the docs folder.
+    .then(() => {
+      copyFolderSync('./tmp/package/docs', `./docs/${path}/${version}`);
+      try {
+      let struct = generateStructure(fs.readFileSync('./tmp/package/index.d.ts', 'utf8'));
+      fs.writeFileSync(`./docs/${path}/${version}/structure.json`, JSON.stringify(struct));
+      } catch (err) {
+        console.error(err);
+        throw new Error(`Failed to generate structure.json for ${path} ${version}`);
+      }
+    })
     .catch((err) => {
       console.error(err);
       // If it fails, add it to the failed list and never try again.
       if (failed.indexOf(path + ' ' + version) === -1) {
         failed.push(path + ' ' + version);
       }
-    })
-    // Copy the generated docs to the docs folder.
-    .then(() => {
-      copyFolderSync('./tmp/package/docs', `./docs/${path}/${version}`);
     });
 }
 
-export { generateTypeDoc };
+async function generateOnlyStructure(path, name, version) {
+  console.log(`Generating structure.json for ${path} ${version}`);
+  await fetchNpmPackageVersion(name, version)
+    .then(([data, version]) => {
+      return fetch(data.dist.tarball)
+    })
+    .then((response) => {
+      // Clear tmp folder and extract tarball
+      return new Promise((resolve, reject) => {
+        fs.rmSync('./tmp', { recursive: true, force: true });
+        try {
+          fs.mkdirSync('./tmp');
+        } catch (err) {
+          // Ignore
+        }
+        response.body
+          .pipe(createGunzip())
+          .pipe(extract({ cwd: './tmp' }))
+          .on('error', (err) => {
+            reject(err);
+          })
+          .on('finish', () => {
+            resolve();
+          });
+      });
+    })
+    .then(() => {
+      try {
+        let struct = generateStructure(fs.readFileSync('./tmp/package/index.d.ts', 'utf8'));
+        fs.writeFileSync(`./docs/${path}/${version}/structure.json`, JSON.stringify(struct));
+      } catch (err) {
+        console.error(err);
+        throw new Error(`Failed to generate structure.json for ${path} ${version}`);
+      }
+    })
+}
+
+export { generateTypeDoc, generateOnlyStructure };
