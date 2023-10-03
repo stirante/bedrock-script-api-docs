@@ -61,7 +61,7 @@ for (const p of packages) {
     }
 
     // This is only for refreshing structure.json files
-    await generateOnlyStructure(p.path, p.name, version);
+    // await generateOnlyStructure(p.path, p.name, version);
 
     // Skip if the docs already exist
     if (fs.existsSync(`./docs/${p.path}/${version}`)) {
@@ -87,7 +87,7 @@ for (const p of packages) {
     list: availableVersions
       .map((file) => {
         file = path.basename(file);
-        return template('module_item.html', {
+        return template('version_item.html', {
           name: file,
           path: `/script/${p.path}/${file}/index.html`
         });
