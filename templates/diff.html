@@ -6,18 +6,6 @@
   <script type="module">
     import * as Diff from 'https://unpkg.com/diff@5.1.0/dist/diff.js';;
 
-    function getAddedString(value) {
-      return `<span style='color:green;'>+ ${value}</span>`;
-    }
-
-    function getRemovedString(value) {
-      return `<span style='color:red;'>- ${value}</span>`;
-    }
-
-    function getChangedString(oldValue, newValue) {
-      return `<span style='color:orange;'>! ${oldValue} -> ${newValue}</span>`;
-    }
-
     export class ElementType {
       static ENUM = "enum";
       static CLASS = "class";
@@ -26,6 +14,43 @@
       static PROPERTY = "property";
       static PARAMETER = "parameter";
       static TYPE_ALIAS = "type_alias";
+    }
+
+    export class ChangeType {
+      static REMOVED = 0;
+      static CHANGED = 1;
+      static ADDED = 2;
+    }
+
+    export class Change {
+      constructor(type, changeDetail, groupName, oldValue, newValue) {
+        this.type = type;
+        this.changeDetail = changeDetail;
+        this.groupName = groupName;
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+      }
+      static added(groupName, newValue, changeDetail = '') {
+        return new Change(ChangeType.ADDED, changeDetail, groupName, null, newValue);
+      }
+      static removed(groupName, oldValue, changeDetail = '') {
+        return new Change(ChangeType.REMOVED, changeDetail, groupName, oldValue, null);
+      }
+      static changed(groupName, oldValue, newValue, changeDetail = '') {
+        return new Change(ChangeType.CHANGED, changeDetail, groupName, oldValue, newValue);
+      }
+      toString() {
+        switch (this.type) {
+          case ChangeType.ADDED:
+            return '<div class="change"><div class="chip chip-added">ADDED</div> ' + this.changeDetail + this.newValue + '</div>';
+          case ChangeType.REMOVED:
+            return '<div class="change"><div class="chip chip-removed">REMOVED</div> ' + this.changeDetail + this.oldValue + '</div>';
+          case ChangeType.CHANGED:
+            return '<div class="change"><div class="chip chip-changed">CHANGED</div> ' + this.changeDetail + this.oldValue + ' -> ' + this.newValue + '</div>';
+          default:
+            throw new Error(`Unknown change type: ${this.type}`);
+        }
+      }
     }
 
     function linkParents(element) {
@@ -86,17 +111,17 @@
         if (part.added) {
           if (i > 0 && changes[i - 1].removed) {
             for (let j = 0; j < part.count; j++) {
-              changed.push(getChangedString(`${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`));
+              changed.push(Change.changed(aName, `${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`));
             }
             i++; // skip next part as it's already processed
           } else {
-            changed.push(...part.value.map(value => getAddedString(`${bName}.${value}`)));
+            changed.push(...part.value.map(value => Change.added(bName, `${bName}.${value}`)));
           }
         } else if (part.removed) {
           if (i < changes.length - 1 && changes[i + 1].added) {
             // do nothing as this part will be handled in the next iteration
           } else {
-            changed.push(...part.value.map(value => getRemovedString(`${aName}.${value}`)));
+            changed.push(...part.value.map(value => Change.removed(aName, `${aName}.${value}`)));
           }
         }
         i++;
@@ -108,9 +133,8 @@
      */
     function compareElements(a = {}, b = {}, changed) {
       if (a.type !== b.type && a.type && b.type) {
-        changed.push(getChangedString(`${a.name} type: ${a.type}`, b.type));
+        changed.push(Change.changed(a.name, `${a.type}`, `${b.type}`, `${b.name} type: `));
       }
-      const count = changed.length;
 
       if (a.type === ElementType.ENUM) {
         const aValues = a.values || [];
@@ -121,10 +145,6 @@
         compareProperties(a.properties || [], b.properties || [], changed);
       } else if (b.type === ElementType.METHOD || b.type === ElementType.PROPERTY || b.type === ElementType.TYPE_ALIAS) {
         compareLeaves(a, b, changed);
-      }
-
-      if ([ElementType.CLASS, ElementType.INTERFACE, ElementType.ENUM].includes(b.type) && changed.length > count) {
-        changed.push("");
       }
     }
 
@@ -144,11 +164,11 @@
      */
     function compareLeaves(a, b, changed) {
       if (a.type && b.type && toString(a) !== toString(b)) {
-        changed.push(getChangedString(toString(a), toString(b)));
+        changed.push(Change.changed(b.parent?.name, toString(a), toString(b)));
       } else if (!a.type) {
-        changed.push(getAddedString(toString(b)));
+        changed.push(Change.added(b.parent?.name, toString(b)));
       } else if (!b.type) {
-        changed.push(getRemovedString(toString(a)));
+        changed.push(Change.removed(a.parent?.name, toString(a)));
       }
     }
 
@@ -169,13 +189,36 @@
     moduleSelect.value = Object.keys(document.diffData)[0];
     moduleSelect.onchange();
     compareButton.onclick = async () => {
+      document.getElementById('changes').innerHTML = 'Comparing...';
       const module = moduleSelect.value;
       const versionA = versionASelect.value;
       const versionB = versionBSelect.value;
       const a = await fetch(`${document.diffData[module].path}/${versionA}/structure.json`).then(r => r.json());
       const b = await fetch(`${document.diffData[module].path}/${versionB}/structure.json`).then(r => r.json());
       let changes = compareStructures(a, b);
-      document.getElementById('changes').innerHTML = changes.map(change => `<div class="change">${change}</div>`).join('</br>');
+      if (changes.length == 0) {
+        document.getElementById('changes').innerHTML = 'No changes';
+        return;
+      }
+      let changeMap = {};
+      let others = [];
+      changes.forEach(change => {
+        if (change.groupName && !changeMap[change.groupName]) {
+          changeMap[change.groupName] = [];
+        } else if (!change.groupName) {
+          others.push(change);
+          return;
+        }
+        changeMap[change.groupName].push(change);
+      });
+      let changelog = '';
+      for (const key of Object.keys(changeMap)) {
+        changelog += `<div class="change-group"><h3>${key}</h3><div class="change-list">${changeMap[key].map(change => change.toString()).join('\n')}</div></div>`;
+      }
+      for (const change of others) {
+        changelog += change.toString();
+      }
+      document.getElementById('changes').innerHTML = changelog;
     };
   </script>
 </head>
@@ -204,7 +247,8 @@
       </select>
 
       <button id="compare" disabled>Compare</button>
-      <div id="changes"></div>
+      <div id="changes">
+      </div>
     </div>
 </body>
 </div>

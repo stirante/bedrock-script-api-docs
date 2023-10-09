@@ -1,44 +1,4 @@
 :root {
-    /* Light */
-    --light-color-background: #f2f4f8;
-    --light-color-background-secondary: #eff0f1;
-    --light-color-warning-text: #222;
-    --light-color-background-warning: #e6e600;
-    --light-color-icon-background: var(--light-color-background);
-    --light-color-accent: #c5c7c9;
-    --light-color-active-menu-item: var(--light-color-accent);
-    --light-color-text: #222;
-    --light-color-text-aside: #6e6e6e;
-    --light-color-link: #1f70c2;
-
-    --light-color-ts-project: #b111c9;
-    --light-color-ts-module: var(--light-color-ts-project);
-    --light-color-ts-namespace: var(--light-color-ts-project);
-    --light-color-ts-enum: #7e6f15;
-    --light-color-ts-enum-member: var(--light-color-ts-enum);
-    --light-color-ts-variable: #4760ec;
-    --light-color-ts-function: #572be7;
-    --light-color-ts-class: #1f70c2;
-    --light-color-ts-interface: #108024;
-    --light-color-ts-constructor: var(--light-color-ts-class);
-    --light-color-ts-property: var(--light-color-ts-variable);
-    --light-color-ts-method: var(--light-color-ts-function);
-    --light-color-ts-call-signature: var(--light-color-ts-method);
-    --light-color-ts-index-signature: var(--light-color-ts-property);
-    --light-color-ts-constructor-signature: var(--light-color-ts-constructor);
-    --light-color-ts-parameter: var(--light-color-ts-variable);
-    /* type literal not included as links will never be generated to it */
-    --light-color-ts-type-parameter: var(--light-color-ts-type-alias);
-    --light-color-ts-accessor: var(--light-color-ts-property);
-    --light-color-ts-get-signature: var(--light-color-ts-accessor);
-    --light-color-ts-set-signature: var(--light-color-ts-accessor);
-    /* object literal not included as it is not used and will be removed in 0.25 */
-    --light-color-ts-type-alias: #d51270;
-    /* reference not included as links will be colored with the kind that it points to */
-
-    --light-external-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='10' height='10'><path fill-opacity='0' stroke='%23000' stroke-width='10' d='m43,35H5v60h60V57M45,5v10l10,10-30,30 20,20 30-30 10,10h10V5z'/></svg>");
-    --light-color-scheme: light;
-
     /* Dark */
     --dark-color-background: #2b2e33;
     --dark-color-background-secondary: #1e2024;
@@ -79,87 +39,50 @@
     --dark-external-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='10' height='10'><path fill-opacity='0' stroke='%23fff' stroke-width='10' d='m43,35H5v60h60V57M45,5v10l10,10-30,30 20,20 30-30 10,10h10V5z'/></svg>");
     --dark-color-scheme: dark;
 }
+:root {
+    --color-background: var(--dark-color-background);
+    --color-background-secondary: var(--dark-color-background-secondary);
+    --color-background-warning: var(--dark-color-background-warning);
+    --color-warning-text: var(--dark-color-warning-text);
+    --color-icon-background: var(--dark-color-icon-background);
+    --color-accent: var(--dark-color-accent);
+    --color-active-menu-item: var(--dark-color-active-menu-item);
+    --color-text: var(--dark-color-text);
+    --color-text-aside: var(--dark-color-text-aside);
+    --color-link: var(--dark-color-link);
 
-@media (prefers-color-scheme: light) {
-    :root {
-        --color-background: var(--light-color-background);
-        --color-background-secondary: var(--light-color-background-secondary);
-        --color-background-warning: var(--light-color-background-warning);
-        --color-warning-text: var(--light-color-warning-text);
-        --color-icon-background: var(--light-color-icon-background);
-        --color-accent: var(--light-color-accent);
-        --color-active-menu-item: var(--light-color-active-menu-item);
-        --color-text: var(--light-color-text);
-        --color-text-aside: var(--light-color-text-aside);
-        --color-link: var(--light-color-link);
+    --color-ts-module: var(--dark-color-ts-module);
+    --color-ts-namespace: var(--dark-color-ts-namespace);
+    --color-ts-enum: var(--dark-color-ts-enum);
+    --color-ts-enum-member: var(--dark-color-ts-enum-member);
+    --color-ts-variable: var(--dark-color-ts-variable);
+    --color-ts-function: var(--dark-color-ts-function);
+    --color-ts-class: var(--dark-color-ts-class);
+    --color-ts-interface: var(--dark-color-ts-interface);
+    --color-ts-constructor: var(--dark-color-ts-constructor);
+    --color-ts-property: var(--dark-color-ts-property);
+    --color-ts-method: var(--dark-color-ts-method);
+    --color-ts-call-signature: var(--dark-color-ts-call-signature);
+    --color-ts-index-signature: var(--dark-color-ts-index-signature);
+    --color-ts-constructor-signature: var(
+        --dark-color-ts-constructor-signature
+    );
+    --color-ts-parameter: var(--dark-color-ts-parameter);
+    --color-ts-type-parameter: var(--dark-color-ts-type-parameter);
+    --color-ts-accessor: var(--dark-color-ts-accessor);
+    --color-ts-get-signature: var(--dark-color-ts-get-signature);
+    --color-ts-set-signature: var(--dark-color-ts-set-signature);
+    --color-ts-type-alias: var(--dark-color-ts-type-alias);
 
-        --color-ts-module: var(--light-color-ts-module);
-        --color-ts-namespace: var(--light-color-ts-namespace);
-        --color-ts-enum: var(--light-color-ts-enum);
-        --color-ts-enum-member: var(--light-color-ts-enum-member);
-        --color-ts-variable: var(--light-color-ts-variable);
-        --color-ts-function: var(--light-color-ts-function);
-        --color-ts-class: var(--light-color-ts-class);
-        --color-ts-interface: var(--light-color-ts-interface);
-        --color-ts-constructor: var(--light-color-ts-constructor);
-        --color-ts-property: var(--light-color-ts-property);
-        --color-ts-method: var(--light-color-ts-method);
-        --color-ts-call-signature: var(--light-color-ts-call-signature);
-        --color-ts-index-signature: var(--light-color-ts-index-signature);
-        --color-ts-constructor-signature: var(
-            --light-color-ts-constructor-signature
-        );
-        --color-ts-parameter: var(--light-color-ts-parameter);
-        --color-ts-type-parameter: var(--light-color-ts-type-parameter);
-        --color-ts-accessor: var(--light-color-ts-accessor);
-        --color-ts-get-signature: var(--light-color-ts-get-signature);
-        --color-ts-set-signature: var(--light-color-ts-set-signature);
-        --color-ts-type-alias: var(--light-color-ts-type-alias);
+    --color-chip-added-text: #fff;
+    --color-chip-removed-text: #fff;
+    --color-chip-changed-text: #fff;
+    --color-chip-added: #2e7d32;
+    --color-chip-removed: #c62828;
+    --color-chip-changed: #c05915;
 
-        --external-icon: var(--light-external-icon);
-        --color-scheme: var(--light-color-scheme);
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --color-background: var(--dark-color-background);
-        --color-background-secondary: var(--dark-color-background-secondary);
-        --color-background-warning: var(--dark-color-background-warning);
-        --color-warning-text: var(--dark-color-warning-text);
-        --color-icon-background: var(--dark-color-icon-background);
-        --color-accent: var(--dark-color-accent);
-        --color-active-menu-item: var(--dark-color-active-menu-item);
-        --color-text: var(--dark-color-text);
-        --color-text-aside: var(--dark-color-text-aside);
-        --color-link: var(--dark-color-link);
-
-        --color-ts-module: var(--dark-color-ts-module);
-        --color-ts-namespace: var(--dark-color-ts-namespace);
-        --color-ts-enum: var(--dark-color-ts-enum);
-        --color-ts-enum-member: var(--dark-color-ts-enum-member);
-        --color-ts-variable: var(--dark-color-ts-variable);
-        --color-ts-function: var(--dark-color-ts-function);
-        --color-ts-class: var(--dark-color-ts-class);
-        --color-ts-interface: var(--dark-color-ts-interface);
-        --color-ts-constructor: var(--dark-color-ts-constructor);
-        --color-ts-property: var(--dark-color-ts-property);
-        --color-ts-method: var(--dark-color-ts-method);
-        --color-ts-call-signature: var(--dark-color-ts-call-signature);
-        --color-ts-index-signature: var(--dark-color-ts-index-signature);
-        --color-ts-constructor-signature: var(
-            --dark-color-ts-constructor-signature
-        );
-        --color-ts-parameter: var(--dark-color-ts-parameter);
-        --color-ts-type-parameter: var(--dark-color-ts-type-parameter);
-        --color-ts-accessor: var(--dark-color-ts-accessor);
-        --color-ts-get-signature: var(--dark-color-ts-get-signature);
-        --color-ts-set-signature: var(--dark-color-ts-set-signature);
-        --color-ts-type-alias: var(--dark-color-ts-type-alias);
-
-        --external-icon: var(--dark-external-icon);
-        --color-scheme: var(--dark-color-scheme);
-    }
+    --external-icon: var(--dark-external-icon);
+    --color-scheme: var(--dark-color-scheme);
 }
 
 html {
@@ -1362,4 +1285,47 @@ img {
         position: sticky;
         top: 42px;
     }
+}
+
+.change {
+    margin-bottom: 0.1rem;
+}
+
+.change-group {
+    margin-bottom: 1rem;
+}
+
+.change-group h3 {
+    margin: 0;
+    padding: 0;
+    margin-bottom: 0.5rem;
+}
+
+.change-group .change-list {
+    margin-left: 1rem;
+}
+
+.chip {
+    display: inline-block;
+    padding: 0.2em 0.4em;
+    margin: 0 0.2em;
+    font-size: 0.875rem;
+    border-radius: 0.8em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.chip-added {
+    background-color: var(--color-chip-added);
+    color: var(--color-chip-added-text);
+}
+
+.chip-changed {
+    background-color: var(--color-chip-changed);
+    color: var(--color-chip-changed-text);
+}
+
+.chip-removed {
+    background-color: var(--color-chip-removed);
+    color: var(--color-chip-removed-text);
 }

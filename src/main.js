@@ -5,6 +5,20 @@ import { fetchNpmPackage, fetchNpmPackageVersion } from './npm_utils.js';
 import { generateTypeDoc, generateOnlyStructure } from './docgen.js';
 import template from './template.js';
 
+function createRedirect(tag, tags, pack, availableVersions) {
+  if (tags[tag] && availableVersions.indexOf(tags[tag]) !== -1) {
+    let redirect = template('redirect.html', {
+      path: `/script/${pack.path}/${tags[tag]}/index.html`
+    })
+    fs.writeFileSync(`./docs/${pack.path}/${tag}.html`, redirect);
+    return template('module_link.html', {
+      path: `/script/${pack.path}`,
+      name: tag
+    });
+  }
+  return '';
+}
+
 // List of packages to generate docs for.
 const packages = [
   {
@@ -82,6 +96,11 @@ for (const p of packages) {
     .reverse();
   diffInfo[p.name].versions = availableVersions;
 
+  let dist = pack['dist-tags'] || {};
+  let latestLink = createRedirect('latest', dist, p, availableVersions);
+  let betaLink = createRedirect('beta', dist, p, availableVersions);
+  let rcLink = createRedirect('rc', dist, p, availableVersions);
+
   let index = template('module_index.html', {
     title: p.name,
     list: availableVersions
@@ -94,9 +113,11 @@ for (const p of packages) {
       }).join('\n')
   });
   fs.writeFileSync(`./docs/${p.path}/index.html`, index);
+  let links = latestLink + betaLink + rcLink;
   moduleList += template('module_item.html', {
     name: p.name,
-    path: `/script/${p.path}/index.html`
+    path: `/script/${p.path}`,
+    links: links
   });
 }
 

@@ -1,17 +1,5 @@
 import { diffArrays } from "diff";
 
-function getAddedString(value) {
-  return `+ ${value}`;
-}
-
-function getRemovedString(value) {
-  return `- ${value}`;
-}
-
-function getChangedString(oldValue, newValue) {
-  return `! ${oldValue} -> ${newValue}`;
-}
-
 export class ElementType {
   static ENUM = "enum";
   static CLASS = "class";
@@ -20,6 +8,43 @@ export class ElementType {
   static PROPERTY = "property";
   static PARAMETER = "parameter";
   static TYPE_ALIAS = "type_alias";
+}
+
+export class ChangeType {
+  static REMOVED = 0;
+  static CHANGED = 1;
+  static ADDED = 2;
+}
+
+export class Change {
+  constructor(type, changeDetail, groupName, oldValue, newValue) {
+    this.type = type;
+    this.changeDetail = changeDetail;
+    this.groupName = groupName;
+    this.oldValue = oldValue;
+    this.newValue = newValue;
+  }
+  static added(groupName, newValue, changeDetail = '') {
+    return new Change(ChangeType.ADDED, changeDetail, groupName, null, newValue);
+  }
+  static removed(groupName, oldValue, changeDetail = '') {
+    return new Change(ChangeType.REMOVED, changeDetail, groupName, oldValue, null);
+  }
+  static changed(groupName, oldValue, newValue, changeDetail = '') {
+    return new Change(ChangeType.CHANGED, changeDetail, groupName, oldValue, newValue);
+  }
+  toString() {
+    switch (this.type) {
+      case ChangeType.ADDED:
+        return '<div class="change"><div class="chip chip-added">ADDED</div> ' + this.changeDetail + this.newValue + '</div>';
+      case ChangeType.REMOVED:
+        return '<div class="change"><div class="chip chip-removed">REMOVED</div> ' + this.changeDetail + this.oldValue + '</div>';
+      case ChangeType.CHANGED:
+        return '<div class="change"><div class="chip chip-changed">CHANGED</div> ' + this.changeDetail + this.oldValue + ' -> ' +  this.newValue + '</div>';
+      default:
+        throw new Error(`Unknown change type: ${this.type}`);
+    }
+  }
 }
 
 function linkParents(element) {
@@ -80,17 +105,17 @@ function processChanges(changes, aName, bName, changed) {
     if (part.added) {
       if (i > 0 && changes[i - 1].removed) {
         for (let j = 0; j < part.count; j++) {
-          changed.push(getChangedString(`${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`));
+          changed.push(Change.changed(aName, `${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`));
         }
         i++; // skip next part as it's already processed
       } else {
-        changed.push(...part.value.map(value => getAddedString(`${bName}.${value}`)));
+        changed.push(...part.value.map(value => Change.added(bName, `${bName}.${value}`)));
       }
     } else if (part.removed) {
       if (i < changes.length - 1 && changes[i + 1].added) {
         // do nothing as this part will be handled in the next iteration
       } else {
-        changed.push(...part.value.map(value => getRemovedString(`${aName}.${value}`)));
+        changed.push(...part.value.map(value => Change.removed(aName, `${aName}.${value}`)));
       }
     }
     i++;
@@ -102,9 +127,8 @@ function processChanges(changes, aName, bName, changed) {
  */
 function compareElements(a = {}, b = {}, changed) {
   if (a.type !== b.type && a.type && b.type) {
-    changed.push(getChangedString(`${a.name} type: ${a.type}`, b.type));
+    changed.push(Change.changed(a.name, `${a.type}`, `${b.type}`, `${b.name} type: `));
   }
-  const count = changed.length;
 
   if (a.type === ElementType.ENUM) {
     const aValues = a.values || [];
@@ -115,10 +139,6 @@ function compareElements(a = {}, b = {}, changed) {
     compareProperties(a.properties || [], b.properties || [], changed);
   } else if (b.type === ElementType.METHOD || b.type === ElementType.PROPERTY || b.type === ElementType.TYPE_ALIAS) {
     compareLeaves(a, b, changed);
-  }
-
-  if ([ElementType.CLASS, ElementType.INTERFACE, ElementType.ENUM].includes(b.type) && changed.length > count) {
-    changed.push("");
   }
 }
 
@@ -138,10 +158,10 @@ function compareProperties(aProperties = [], bProperties = [], changed) {
  */
 function compareLeaves(a, b, changed) {
   if (a.type && b.type && toString(a) !== toString(b)) {
-    changed.push(getChangedString(toString(a), toString(b)));
+    changed.push(Change.changed(b.parent?.name, toString(a), toString(b)));
   } else if (!a.type) {
-    changed.push(getAddedString(toString(b)));
+    changed.push(Change.added(b.parent?.name, toString(b)));
   } else if (!b.type) {
-    changed.push(getRemovedString(toString(a)));
+    changed.push(Change.removed(a.parent?.name, toString(a)));
   }
 }
