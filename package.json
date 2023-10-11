@@ -12,6 +12,8 @@
   "scripts": {
     "build": "node src/main.js",
     "sync": "aws s3 sync ./docs s3://stirante.com/script",
+    "sync-diff": "aws s3 cp ./templates/diff.html s3://stirante.com/script/diff.html",
+    "sync-style": "aws s3 cp ./templates/style.css s3://stirante.com/script/style.css",
     "all": "npm run build && npm run sync"
   },
   "main": "src/main.js",

@@ -23,30 +23,31 @@
     }
 
     export class Change {
-      constructor(type, changeDetail, groupName, oldValue, newValue) {
+      constructor(type, changeDetail, groupName, oldValue, newValue, href) {
         this.type = type;
         this.changeDetail = changeDetail;
         this.groupName = groupName;
         this.oldValue = oldValue;
         this.newValue = newValue;
+        this.href = href;
       }
-      static added(groupName, newValue, changeDetail = '') {
-        return new Change(ChangeType.ADDED, changeDetail, groupName, null, newValue);
+      static added(groupName, newValue, href, changeDetail = '') {
+        return new Change(ChangeType.ADDED, changeDetail, groupName, null, newValue, href);
       }
-      static removed(groupName, oldValue, changeDetail = '') {
-        return new Change(ChangeType.REMOVED, changeDetail, groupName, oldValue, null);
+      static removed(groupName, oldValue, href, changeDetail = '') {
+        return new Change(ChangeType.REMOVED, changeDetail, groupName, oldValue, null, href);
       }
-      static changed(groupName, oldValue, newValue, changeDetail = '') {
-        return new Change(ChangeType.CHANGED, changeDetail, groupName, oldValue, newValue);
+      static changed(groupName, oldValue, newValue, href, changeDetail = '') {
+        return new Change(ChangeType.CHANGED, changeDetail, groupName, oldValue, newValue, href);
       }
       toString() {
         switch (this.type) {
           case ChangeType.ADDED:
-            return '<div class="change"><div class="chip chip-added">ADDED</div> ' + this.changeDetail + this.newValue + '</div>';
+            return `<div class="change"><a href="${this.href}"><div class="chip chip-added">ADDED</div> ${this.changeDetail + this.newValue}</a></div>`;
           case ChangeType.REMOVED:
-            return '<div class="change"><div class="chip chip-removed">REMOVED</div> ' + this.changeDetail + this.oldValue + '</div>';
+            return `<div class="change"><a href="${this.href}"><div class="chip chip-removed">REMOVED</div> ${this.changeDetail + this.oldValue}</a></div>`;
           case ChangeType.CHANGED:
-            return '<div class="change"><div class="chip chip-changed">CHANGED</div> ' + this.changeDetail + this.oldValue + ' -> ' + this.newValue + '</div>';
+            return `<div class="change"><a href="${this.href}"><div class="chip chip-changed">CHANGED</div> ${this.changeDetail}${highlightDifferences(this.oldValue, this.newValue)}</a></div>`;//${this.changeDetail + this.oldValue} -> ${this.newValue}
           default:
             throw new Error(`Unknown change type: ${this.type}`);
         }
@@ -73,15 +74,15 @@
       return map;
     }
 
-    export function compareStructures(a, b) {
+    export function compareStructures(a, b, path, versionA, versionB) {
       const aMap = buildMap(a);
       const bMap = buildMap(b);
       const aKeys = Object.keys(aMap).sort();
       const bKeys = Object.keys(bMap).sort();
       let changed = [];
 
-      aKeys.forEach(name => compareElements(aMap[name], bMap[name], changed));
-      bKeys.forEach(name => compareElements(aMap[name], bMap[name], changed));
+      aKeys.forEach(name => compareElements(aMap[name], bMap[name], changed, path, versionA, versionB));
+      bKeys.forEach(name => aMap[name] || compareElements(aMap[name], bMap[name], changed, path, versionA, versionB));
 
       return changed;
     }
@@ -104,24 +105,24 @@
       }
     }
 
-    function processChanges(changes, aName, bName, changed) {
+    function processChanges(changes, aName, bName, changed, path, versionA, versionB) {
       let i = 0;
       while (i < changes.length) {
         const part = changes[i];
         if (part.added) {
           if (i > 0 && changes[i - 1].removed) {
             for (let j = 0; j < part.count; j++) {
-              changed.push(Change.changed(aName, `${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`));
+              changed.push(Change.changed(aName, `${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`, `/script/${path}/${versionB}/enums/${bName}.html#${part.value[j]}`, `${bName} type: `));
             }
             i++; // skip next part as it's already processed
           } else {
-            changed.push(...part.value.map(value => Change.added(bName, `${bName}.${value}`)));
+            changed.push(...part.value.map(value => Change.added(bName, `${bName}.${value}`, `/script/${path}/${versionB}/enums/${bName}.html#${value}`)));
           }
         } else if (part.removed) {
           if (i < changes.length - 1 && changes[i + 1].added) {
             // do nothing as this part will be handled in the next iteration
           } else {
-            changed.push(...part.value.map(value => Change.removed(aName, `${aName}.${value}`)));
+            changed.push(...part.value.map(value => Change.removed(aName, `${aName}.${value}`, `/script/${path}/${versionA}/enums/${aName}.html#${value}`)));
           }
         }
         i++;
@@ -131,45 +132,105 @@
     /**
      * Compares two elements and adds the result to the changed array.
      */
-    function compareElements(a = {}, b = {}, changed) {
+    function compareElements(a = {}, b = {}, changed, path, versionA, versionB) {
       if (a.type !== b.type && a.type && b.type) {
-        changed.push(Change.changed(a.name, `${a.type}`, `${b.type}`, `${b.name} type: `));
+        changed.push(Change.changed(a.name, `${a.type}`, `${b.type}`, makeHref(path, versionB, b), `${b.name} type: `));
       }
 
       if (a.type === ElementType.ENUM) {
         const aValues = a.values || [];
         const bValues = b.values || [];
         const changes = window.Diff.diffArrays(aValues.sort(), bValues.sort(), { comparator: (a, b) => a === b });
-        processChanges(changes, a.name, b.name, changed);
+        processChanges(changes, a.name, b.name, changed, path, versionA, versionB);
       } else if ([ElementType.CLASS, ElementType.INTERFACE].includes(b.type)) {
-        compareProperties(a.properties || [], b.properties || [], changed);
+        compareProperties(a.properties || [], b.properties || [], changed, path, versionA, versionB);
       } else if (b.type === ElementType.METHOD || b.type === ElementType.PROPERTY || b.type === ElementType.TYPE_ALIAS) {
-        compareLeaves(a, b, changed);
+        compareLeaves(a, b, changed, path, versionA, versionB);
       }
     }
 
     /**
      * Compares two elements, that can have child elements and adds the result to the changed array.
      */
-    function compareProperties(aProperties = [], bProperties = [], changed) {
+    function compareProperties(aProperties = [], bProperties = [], changed, path, versionA, versionB) {
       const aMap = buildMap(aProperties);
       const bMap = buildMap(bProperties);
 
-      aProperties.forEach(property => compareElements(aMap[property.name], bMap[property.name], changed));
-      bProperties.forEach(property => compareElements(aMap[property.name], bMap[property.name], changed));
+      aProperties.forEach(property => compareElements(aMap[property.name], bMap[property.name], changed, path, versionA, versionB));
+      bProperties.forEach(property => aMap[property.name] || compareElements(aMap[property.name], bMap[property.name], changed, path, versionA, versionB));
     }
 
     /**
      * Compares two elements, that don't have any child elements and adds the result to the changed array.
      */
-    function compareLeaves(a, b, changed) {
+    function compareLeaves(a, b, changed, path, versionA, versionB) {
       if (a.type && b.type && toString(a) !== toString(b)) {
-        changed.push(Change.changed(b.parent?.name, toString(a), toString(b)));
+        changed.push(Change.changed(b.parent?.name, toString(a), toString(b), makeHref(path, versionB, b)));
       } else if (!a.type) {
-        changed.push(Change.added(b.parent?.name, toString(b)));
+        changed.push(Change.added(b.parent?.name, toString(b), makeHref(path, versionB, b)));
       } else if (!b.type) {
-        changed.push(Change.removed(a.parent?.name, toString(a)));
+        changed.push(Change.removed(a.parent?.name, toString(a), makeHref(path, versionA, a)));
       }
+    }
+
+    function makeHref(path, version, element) {
+      let elementType = '';
+      switch (element.type) {
+        case ElementType.CLASS:
+          elementType = 'classes';
+          break;
+        case ElementType.INTERFACE:
+          elementType = 'interfaces';
+          break;
+        case ElementType.ENUM:
+          elementType = 'enums';
+          break;
+        case ElementType.METHOD:
+        case ElementType.PROPERTY:
+          if (element.parent && element.parent.type === ElementType.CLASS) {
+            elementType = 'classes';
+          } else if (element.parent && element.parent.type === ElementType.INTERFACE) {
+            elementType = 'interfaces';
+          } else {
+            elementType = 'variables';
+          }
+          break;
+      }
+      if (!element.parent) {
+        return `/script/${path}/${version}/${elementType}/${element.name}${elementType === 'variables' ? '-1' : ''}.html`;
+      }
+      return `/script/${path}/${version}/${elementType}/${element.parent.name}.html#${element.name}`;
+    }
+
+    function highlightDifferences(str1, str2) {
+      const diff = window.Diff.diffWords(str1, str2);
+      let originalResult = '';
+      let changedResult = '';
+
+      diff.forEach(part => {
+        const escapedValue = escapeHtml(part.value);
+        if (part.added) {
+          changedResult += `<span class="added">${escapedValue}</span>`;
+          // originalResult += `<span class="placeholder">${' '.repeat(part.value.length)}</span>`;
+        } else if (part.removed) {
+          originalResult += `<span class="removed">${escapedValue}</span>`;
+          // changedResult += `<span class="placeholder">${' '.repeat(part.value.length)}</span>`;
+        } else {
+          originalResult += `<span class="common">${escapedValue}</span>`;
+          changedResult += `<span class="common">${escapedValue}</span>`;
+        }
+      });
+
+      return originalResult + ' -&gt; ' + changedResult;
+    }
+
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     document.diffData = await fetch('diff.json').then(r => r.json());
@@ -193,9 +254,10 @@
       const module = moduleSelect.value;
       const versionA = versionASelect.value;
       const versionB = versionBSelect.value;
-      const a = await fetch(`${document.diffData[module].path}/${versionA}/structure.json`).then(r => r.json());
-      const b = await fetch(`${document.diffData[module].path}/${versionB}/structure.json`).then(r => r.json());
-      let changes = compareStructures(a, b);
+      const path = document.diffData[module].path;
+      const a = await fetch(`${path}/${versionA}/structure.json`).then(r => r.json());
+      const b = await fetch(`${path}/${versionB}/structure.json`).then(r => r.json());
+      let changes = compareStructures(a, b, path, versionA, versionB);
       if (changes.length == 0) {
         document.getElementById('changes').innerHTML = 'No changes';
         return;

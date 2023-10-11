@@ -1,7 +1,6 @@
 import { parseModule } from "magicast";
 import * as babelParser from '@babel/parser';
 import fs from 'fs';
-import path from "path";
 import { ElementType } from "./compare.js";
 
 let _babelParser;
@@ -195,7 +194,7 @@ function parseType(element) {
   if (element.typeAnnotation.type === 'TSStringKeyword') {
     return "string"
   } else if (element.typeAnnotation.type === 'TSTypeReference') {
-    return element.typeAnnotation.typeName.name;
+    return element.typeAnnotation.typeName.name ?? '';
   } else if (element.typeAnnotation.type === 'TSArrayType') {
     return parseType({ typeAnnotation: element.typeAnnotation.elementType }) + "[]";
   } else if (element.typeAnnotation.type === 'TSUnionType') {
@@ -223,7 +222,7 @@ function parseType(element) {
   } else if (element.typeAnnotation.type === 'TSIntersectionType') {
     return element.typeAnnotation.types.map(type => parseType({ typeAnnotation: type })).join(" & ");
   } else if (element.typeAnnotation.type === 'TSUndefinedKeyword') {
-    return "undefined";
+    return "";
   } else if (element.typeAnnotation.type === 'TSObjectKeyword') {
     return "object";
   } else if (element.typeAnnotation.type === 'TSIndexedAccessType') {
@@ -278,6 +277,3 @@ function test(filename) {
 
 // test("./tmp/package/index.d.ts");
 // let b = test("1.7.0-beta.ts");
-
-// let result = compareStructures(a, b);
-// fs.writeFileSync("out.md", "```diff\n" + result.join("\n") + "\n```");

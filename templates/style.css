@@ -1290,3 +1290,13 @@ img {
     background-color: var(--color-chip-removed);
     color: var(--color-chip-removed-text);
 }
+
+.added {
+    color: #e6ffe6;
+    background-color: #008000;
+}
+
+.removed {
+    color: #ffe6e6;
+    background-color: #800000;
+}
