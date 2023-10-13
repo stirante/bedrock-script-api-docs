@@ -1,7 +1,16 @@
 import { parseModule } from "magicast";
 import * as babelParser from '@babel/parser';
 import fs from 'fs';
-import { ElementType } from "./compare.js";
+
+export class ElementType {
+  static ENUM = "enum";
+  static CLASS = "class";
+  static INTERFACE = "interface";
+  static METHOD = "method";
+  static PROPERTY = "property";
+  static PARAMETER = "parameter";
+  static TYPE_ALIAS = "type_alias";
+}
 
 let _babelParser;
 function getBabelParser() {
