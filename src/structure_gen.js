@@ -231,11 +231,11 @@ function parseType(element) {
   } else if (element.typeAnnotation.type === 'TSIntersectionType') {
     return element.typeAnnotation.types.map(type => parseType({ typeAnnotation: type })).join(" & ");
   } else if (element.typeAnnotation.type === 'TSUndefinedKeyword') {
-    return "";
+    return "undefined";
   } else if (element.typeAnnotation.type === 'TSObjectKeyword') {
     return "object";
   } else if (element.typeAnnotation.type === 'TSIndexedAccessType') {
-    return parseType({typeAnnotation:element.typeAnnotation.objectType}) + "[" + parseType({typeAnnotation:element.typeAnnotation.indexType}) + "]";
+    return parseType({ typeAnnotation: element.typeAnnotation.objectType }) + "[" + parseType({ typeAnnotation: element.typeAnnotation.indexType }) + "]";
   }
   throw new Error("Unknown type annotation: " + element.typeAnnotation.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
 }

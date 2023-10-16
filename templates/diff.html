@@ -185,6 +185,9 @@
         case ElementType.ENUM:
           elementType = 'enums';
           break;
+        case ElementType.TYPE_ALIAS:
+          elementType = 'types';
+          break;
         case ElementType.METHOD:
         case ElementType.PROPERTY:
           if (element.parent && element.parent.type === ElementType.CLASS) {
