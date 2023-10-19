@@ -44,6 +44,10 @@ const packages = [
   {
     name: '@minecraft/server-admin',
     path: 'server-admin'
+  },
+  {
+    name: "@minecraft/common",
+    path: "common"
   }
 ]
 

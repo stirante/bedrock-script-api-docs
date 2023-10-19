@@ -1,6 +1,11 @@
 import { parseModule } from "magicast";
 import * as babelParser from '@babel/parser';
 import fs from 'fs';
+import { fetchNpmPackageVersion } from "./npm_utils.js";
+import fetch from 'node-fetch';
+import { createGunzip } from 'zlib';
+import { t } from 'tar';
+import path from 'path';
 
 export class ElementType {
   static ENUM = "enum";
@@ -203,6 +208,9 @@ function parseType(element) {
   if (element.typeAnnotation.type === 'TSStringKeyword') {
     return "string"
   } else if (element.typeAnnotation.type === 'TSTypeReference') {
+    if (element.typeAnnotation.typeName.type === 'TSQualifiedName') {
+      return element.typeAnnotation.typeName.left.name + "." + element.typeAnnotation.typeName.right.name;
+    }
     return element.typeAnnotation.typeName.name ?? '';
   } else if (element.typeAnnotation.type === 'TSArrayType') {
     return parseType({ typeAnnotation: element.typeAnnotation.elementType }) + "[]";
@@ -277,6 +285,36 @@ function parse(element) {
     throw new Error("Unknown element type: " + element.type + " at " + loc.start.line + ":" + loc.start.column);
   }
 }
+
+async function downloadForTesting(tag) {
+  const fileName = tag + '.ts';
+  if (fs.existsSync(fileName)) {
+    return fileName;
+  }
+  const ver = await fetchNpmPackageVersion('@minecraft/server', tag);
+  const url = ver[0].dist.tarball;
+  const response = await fetch(url);
+  await new Promise((resolve, reject) => {
+    response.body
+      .pipe(createGunzip())
+      .pipe(t())
+      .on('entry', (entry) => {
+        if (path.basename(entry.path) === 'index.d.ts') {
+            entry.pipe(fs.createWriteStream(fileName));
+        } else {
+            entry.resume();
+        }
+      })
+      .on('error', (err) => {
+        reject(err);
+      })
+      .on('end', () => {
+        resolve(fileName);
+        console.log(`Finished extracting`);
+      });
+  });
+}
+
 function test(filename) {
   const code = fs.readFileSync(filename, 'utf8');
   const elements = generateStructure(code);
@@ -284,5 +322,6 @@ function test(filename) {
   return elements;
 }
 
-// test("./tmp/package/index.d.ts");
+// const fileName = await downloadForTesting('1.8.0-beta.1.20.50-preview.21');
+// test(fileName);
 // let b = test("1.7.0-beta.ts");

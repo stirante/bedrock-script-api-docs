@@ -236,6 +236,36 @@
         .replace(/'/g, "&#039;");
     }
 
+    function setFromHash() {
+      const hash = window.location.hash;
+      if (hash) {
+        let [module, versionA, versionB] = hash.substring(1).split('/');
+        if (!module || !versionA || !versionB) {
+          console.log('Invalid hash', hash);
+          window.location.hash = '';
+          return;
+        }
+        module = decodeURIComponent(module);
+        versionA = decodeURIComponent(versionA);
+        versionB = decodeURIComponent(versionB);
+        if (!document.diffData[module]) {
+          console.log('Unknown module', module);
+          window.location.hash = '';
+          return;
+        }
+        if (!document.diffData[module].versions.includes(versionA) || !document.diffData[module].versions.includes(versionB)) {
+          console.log('Unknown version', versionA, versionB);
+          window.location.hash = '';
+          return;
+        }
+        moduleSelect.value = module;
+        moduleSelect.onchange();
+        versionASelect.value = versionA;
+        versionBSelect.value = versionB;
+        compareButton.click();
+      }
+    }
+
     document.diffData = await fetch('diff.json').then(r => r.json());
     const moduleSelect = document.getElementById('module');
     const versionASelect = document.getElementById('versionA');
@@ -253,6 +283,7 @@
     moduleSelect.value = Object.keys(document.diffData)[0];
     moduleSelect.onchange();
     compareButton.onclick = async () => {
+      document.location.hash = `${encodeURIComponent(moduleSelect.value)}/${encodeURIComponent(versionASelect.value)}/${encodeURIComponent(versionBSelect.value)}`;
       document.getElementById('changes').innerHTML = 'Comparing...';
       const module = moduleSelect.value;
       const versionA = versionASelect.value;
@@ -285,6 +316,7 @@
       }
       document.getElementById('changes').innerHTML = changelog;
     };
+    setFromHash();
   </script>
 </head>
 
