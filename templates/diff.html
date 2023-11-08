@@ -136,15 +136,16 @@
       if (a.type !== b.type && a.type && b.type) {
         changed.push(Change.changed(a.name, `${a.type}`, `${b.type}`, makeHref(path, versionB, b), `${b.name} type: `));
       }
+      let type = a.type || b.type;
 
-      if (a.type === ElementType.ENUM) {
+      if (type === ElementType.ENUM) {
         const aValues = a.values || [];
         const bValues = b.values || [];
         const changes = window.Diff.diffArrays(aValues.sort(), bValues.sort(), { comparator: (a, b) => a === b });
         processChanges(changes, a.name, b.name, changed, path, versionA, versionB);
-      } else if ([ElementType.CLASS, ElementType.INTERFACE].includes(b.type)) {
+      } else if ([ElementType.CLASS, ElementType.INTERFACE].includes(type)) {
         compareProperties(a.properties || [], b.properties || [], changed, path, versionA, versionB);
-      } else if (b.type === ElementType.METHOD || b.type === ElementType.PROPERTY || b.type === ElementType.TYPE_ALIAS) {
+      } else if ([ElementType.METHOD, ElementType.PROPERTY, ElementType.TYPE_ALIAS].includes(type)) {
         compareLeaves(a, b, changed, path, versionA, versionB);
       }
     }
