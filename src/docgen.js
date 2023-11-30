@@ -7,7 +7,7 @@ import { copyFolderSync } from './file_utils.js';
 import { generateStructure } from './structure_gen.js';
 import { fetchNpmPackageVersion } from './npm_utils.js';
 
-function generateTypeDoc(path, url, version, failed) {
+function generateTypeDoc(path, url, version, main, skipStructure, failed) {
   return fetch(url)
     .then((response) => {
       // Clear tmp folder, extract tarball and copy tsconfig.json
@@ -29,6 +29,10 @@ function generateTypeDoc(path, url, version, failed) {
               p.dependencies[dep] = p.dependencies[dep].replace('^', '');
             }
             fs.writeFileSync('./tmp/package/package.json', JSON.stringify(p, null, 2));
+            p = JSON.parse(fs.readFileSync('./tmp/package/tsconfig.json', 'utf8'));
+            // Change main in include
+            p.include[0] = main;
+            fs.writeFileSync('./tmp/package/tsconfig.json', JSON.stringify(p, null, 2));
             resolve();
           });
       });
@@ -38,7 +42,7 @@ function generateTypeDoc(path, url, version, failed) {
         // Following commands were created through trial, error and frustration.
         // Still throws some errors and warnings, but it works (mostly).
         execSync('npm install', { cwd: './tmp/package' });
-        const child = exec('npx typedoc --out ./docs --hideGenerator --searchInComments --entryPoints ./index.d.ts ./tsconfig.json', { cwd: './tmp/package' }, (err, stdout, stderr) => {
+        const child = exec(`npx typedoc --out ./docs --hideGenerator --searchInComments --entryPoints ./${main} ./tsconfig.json`, { cwd: './tmp/package' }, (err, stdout, stderr) => {
           if (err) {
             reject(err);
           } else {
@@ -52,12 +56,14 @@ function generateTypeDoc(path, url, version, failed) {
     // Copy the generated docs to the docs folder.
     .then(() => {
       copyFolderSync('./tmp/package/docs', `./docs/${path}/${version}`);
-      try {
-      let struct = generateStructure(fs.readFileSync('./tmp/package/index.d.ts', 'utf8'));
-      fs.writeFileSync(`./docs/${path}/${version}/structure.json`, JSON.stringify(struct));
-      } catch (err) {
-        console.error(err);
-        throw new Error(`Failed to generate structure.json for ${path} ${version}`);
+      if (!skipStructure) {
+        try {
+          let struct = generateStructure(fs.readFileSync('./tmp/package/index.d.ts', 'utf8'));
+          fs.writeFileSync(`./docs/${path}/${version}/structure.json`, JSON.stringify(struct));
+        } catch (err) {
+          console.error(err);
+          throw new Error(`Failed to generate structure.json for ${path} ${version}`);
+        }
       }
     })
     .catch((err) => {

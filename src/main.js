@@ -48,6 +48,12 @@ const packages = [
   {
     name: "@minecraft/common",
     path: "common"
+  },
+  {
+    name: "@bedrock-oss/bedrock-boost",
+    path: "bedrock-boost",
+    main: "dist/index.d.ts",
+    skipStructure: true
   }
 ]
 
@@ -63,9 +69,11 @@ if (fs.existsSync('./failed.txt')) {
 let moduleList = "";
 
 for (const p of packages) {
-  diffInfo[p.name] = {
-    versions: [],
-    path: p.path
+  if (!p.skipStructure) {
+    diffInfo[p.name] = {
+      versions: [],
+      path: p.path
+    }
   }
   let pack = await fetchNpmPackage(p.name);
   for (const version in pack.versions) {
@@ -89,7 +97,7 @@ for (const p of packages) {
     await fetchNpmPackageVersion(p.name, version)
       .then(([data, version]) => {
         const url = data.dist.tarball;
-        return generateTypeDoc(p.path, url, version, failed);
+        return generateTypeDoc(p.path, url, version, p.main ?? "index.d.ts", !!p.skipStructure, failed);
       });
   }
 
@@ -98,7 +106,9 @@ for (const p of packages) {
     return fs.statSync(`./docs/${p.path}/${file}`).isDirectory();
   }).sort(compareVersions)
     .reverse();
-  diffInfo[p.name].versions = availableVersions;
+  if (!p.skipStructure) {
+    diffInfo[p.name].versions = availableVersions;
+  }
 
   let dist = pack['dist-tags'] || {};
   let latestLink = createRedirect('latest', dist, p, availableVersions);
