@@ -240,6 +240,8 @@ function parseType(element) {
     return element.typeAnnotation.types.map(type => parseType({ typeAnnotation: type })).join(" & ");
   } else if (element.typeAnnotation.type === 'TSUndefinedKeyword') {
     return "undefined";
+  } else if (element.typeAnnotation.type === 'TSUnknownKeyword') {
+    return "unknown";
   } else if (element.typeAnnotation.type === 'TSObjectKeyword') {
     return "object";
   } else if (element.typeAnnotation.type === 'TSIndexedAccessType') {
