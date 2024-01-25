@@ -6,8 +6,9 @@ import fs from 'fs';
 import { copyFolderSync } from './file_utils.js';
 import { generateStructure } from './structure_gen.js';
 import { fetchNpmPackageVersion } from './npm_utils.js';
+import { processVersion, POST_INSTALL, PRE_INSTALL } from './specific_fixes.js';
 
-function generateTypeDoc(path, url, version, main, skipStructure, failed) {
+function generateTypeDoc(path, moduleName, url, version, main, skipStructure, failed) {
   return fetch(url)
     .then((response) => {
       // Clear tmp folder, extract tarball and copy tsconfig.json
@@ -39,9 +40,11 @@ function generateTypeDoc(path, url, version, main, skipStructure, failed) {
     })
     .then(() => {
       return new Promise((resolve, reject) => {
-        // Following commands were created through trial, error and frustration.
-        // Still throws some errors and warnings, but it works (mostly).
+        processVersion(moduleName, version, './tmp/package', PRE_INSTALL);
         execSync('npm install', { cwd: './tmp/package' });
+        processVersion(moduleName, version, './tmp/package', POST_INSTALL);
+        // Following command was created through trial, error and frustration.
+        // Still throws some errors and warnings, but it works (mostly).
         const child = exec(`npx typedoc --out ./docs --hideGenerator --searchInComments --entryPoints ./${main} ./tsconfig.json`, { cwd: './tmp/package' }, (err, stdout, stderr) => {
           if (err) {
             reject(err);

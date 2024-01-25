@@ -50,9 +50,19 @@ const packages = [
     path: "common"
   },
   {
+    name: "@minecraft/debug-utilities",
+    path: "debug-utilities"
+  },
+  {
     name: "@bedrock-oss/bedrock-boost",
     path: "bedrock-boost",
     main: "dist/index.d.ts",
+    skipStructure: true
+  },
+  {
+    "name": "@minecraft/vanilla-data",
+    "path": "vanilla-data",
+    "main": "lib/index.d.ts",
     skipStructure: true
   }
 ]
@@ -97,7 +107,7 @@ for (const p of packages) {
     await fetchNpmPackageVersion(p.name, version)
       .then(([data, version]) => {
         const url = data.dist.tarball;
-        return generateTypeDoc(p.path, url, version, p.main ?? "index.d.ts", !!p.skipStructure, failed);
+        return generateTypeDoc(p.path, p.name, url, version, p.main ?? "index.d.ts", !!p.skipStructure, failed);
       });
   }
 
