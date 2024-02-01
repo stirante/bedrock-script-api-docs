@@ -30,6 +30,19 @@ const fixes = [
       index = index.replace('runJob(generator: generator): number;', 'runJob(generator: Generator): number;')
       fs.writeFileSync(indexPath, index);
     }
+  },
+  {
+    name: 'Removing devDependencies from package.json',
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return moduleName === '@minecraft/math' && (version === '1.0.0' || version === '1.0.1')
+    },
+    apply: (pkgPath) => {
+      const indexPath = path.join(pkgPath, 'package.json');
+      let index = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+      index.devDependencies = {};
+      fs.writeFileSync(indexPath, JSON.stringify(index));
+    }
   }
 ]
 

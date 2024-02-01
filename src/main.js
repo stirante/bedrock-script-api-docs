@@ -50,20 +50,25 @@ const packages = [
     path: "common"
   },
   {
-    name: "@minecraft/debug-utilities",
-    path: "debug-utilities"
-  },
-  {
     name: "@bedrock-oss/bedrock-boost",
     path: "bedrock-boost",
     main: "dist/index.d.ts",
     skipStructure: true
   },
   {
-    "name": "@minecraft/vanilla-data",
-    "path": "vanilla-data",
-    "main": "lib/index.d.ts",
+    name: "@minecraft/vanilla-data",
+    path: "vanilla-data",
+    main: "lib/index.d.ts",
     skipStructure: true
+  },
+  {
+    name: "@minecraft/debug-utilities",
+    path: "debug-utilities"
+  },
+  {
+    name: "@minecraft/math",
+    path: "math",
+    main: "lib/types/math.d.ts"
   }
 ]
 

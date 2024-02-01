@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import { createGunzip } from 'zlib';
 import { t } from 'tar';
 import path from 'path';
+import { debug } from "console";
 
 export class ElementType {
   static ENUM = "enum";
@@ -94,7 +95,7 @@ export function generateStructure(code) {
   let elements = [];
 
   structure.$ast.body.forEach(element => {
-    if (element.type === 'ImportDeclaration') {
+    if (element.type === 'ImportDeclaration' || !element.declaration) {
       return;
     }
     elements.push(parse(element.declaration));
@@ -240,6 +241,10 @@ function parseType(element) {
     return element.typeAnnotation.types.map(type => parseType({ typeAnnotation: type })).join(" & ");
   } else if (element.typeAnnotation.type === 'TSUndefinedKeyword') {
     return "undefined";
+  } else if (element.typeAnnotation.type === 'TSNeverKeyword') {
+    return "never";
+  } else if (element.typeAnnotation.type === 'TSThisType') {
+    return "this";
   } else if (element.typeAnnotation.type === 'TSUnknownKeyword') {
     return "unknown";
   } else if (element.typeAnnotation.type === 'TSObjectKeyword') {

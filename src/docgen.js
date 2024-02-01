@@ -61,7 +61,7 @@ function generateTypeDoc(path, moduleName, url, version, main, skipStructure, fa
       copyFolderSync('./tmp/package/docs', `./docs/${path}/${version}`);
       if (!skipStructure) {
         try {
-          let struct = generateStructure(fs.readFileSync('./tmp/package/index.d.ts', 'utf8'));
+          let struct = generateStructure(fs.readFileSync(`./tmp/package/${main}`, 'utf8'));
           fs.writeFileSync(`./docs/${path}/${version}/structure.json`, JSON.stringify(struct));
         } catch (err) {
           console.error(err);
