@@ -9,7 +9,7 @@ const fixes = [
     name: 'Fixing incorrect argument type for runJob function',
     stage: PRE_INSTALL,
     canApply: (moduleName, version) => {
-      return moduleName === '@minecraft/server' && version === '1.9.0-beta.1.20.60-preview.26'
+      return moduleName === '@minecraft/server' && (version === '1.9.0-beta.1.20.60-preview.26' || version === '1.9.0-beta.1.20.60-stable')
     },
     apply: (pkgPath) => {
       const indexPath = path.join(pkgPath, 'index.d.ts');
@@ -22,7 +22,7 @@ const fixes = [
     name: 'Fixing incorrect argument type for runJob function',
     stage: POST_INSTALL,
     canApply: (moduleName, version) => {
-      return moduleName === '@minecraft/server-editor' && version === '0.1.0-beta.1.20.60-preview.26'
+      return moduleName === '@minecraft/server-editor' && (version === '0.1.0-beta.1.20.60-preview.26' || version === '0.1.0-beta.1.20.60-stable')
     },
     apply: (pkgPath) => {
       const indexPath = path.join(pkgPath, 'node_modules', '@minecraft', 'server', 'index.d.ts');
@@ -35,7 +35,7 @@ const fixes = [
     name: 'Removing devDependencies from package.json',
     stage: PRE_INSTALL,
     canApply: (moduleName, version) => {
-      return moduleName === '@minecraft/math' && (version === '1.0.0' || version === '1.0.1')
+      return moduleName === '@minecraft/math'
     },
     apply: (pkgPath) => {
       const indexPath = path.join(pkgPath, 'package.json');
