@@ -43,7 +43,24 @@ const fixes = [
       index.devDependencies = {};
       fs.writeFileSync(indexPath, JSON.stringify(index));
     }
-  }
+  },
+  {
+    name: 'Fixing missing typedef for variant type in server-editor',
+    stage: POST_INSTALL,
+    canApply: (moduleName, version) => {
+      return moduleName === '@minecraft/server-editor' && (version === '0.1.0-beta.1.21.0-preview.21' || version === '0.1.0-beta.1.21.0-preview.20')
+    },
+    apply: (pkgPath) => {
+      const indexPath = path.join(pkgPath, 'index.d.ts');
+      let index = fs.readFileSync(indexPath, 'utf-8');
+      index = index.replace('onChange: (arg: variant) => boolean', 'onChange: (arg: boolean | number | string | minecraftserver.Vector3) => boolean');
+      // Not sure why the second one is not getting replaced, but repeating the replace fixes it
+      index = index.replace('onChange: (arg: variant) => boolean', 'onChange: (arg: boolean | number | string | minecraftserver.Vector3) => boolean');
+      index = index.replace('valueChanged?: (arg: variant) => void', 'valueChanged?: (arg: boolean | number | string | minecraftserver.Vector3) => void');
+      index = index.replace('valueChanged?: (arg: variant) => void', 'valueChanged?: (arg: boolean | number | string | minecraftserver.Vector3) => void');
+      fs.writeFileSync(indexPath, index);
+    }
+  },
 ]
 
 export function processVersion(moduleName, version, pkgPath, stage) {
