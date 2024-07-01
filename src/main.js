@@ -101,7 +101,7 @@ for (const p of packages) {
       continue;
     }
 
-    // This is only for refreshing structure.json files
+    // This is only for regenerating structure.json files
     // if (!p.skipStructure) {
     //   await generateOnlyStructure(p.path, p.name, version, p.main ?? "index.d.ts");
     // }

@@ -235,7 +235,7 @@ function parseType(element) {
   } else if (element.typeAnnotation.type === 'TSLiteralType') {
     return parseType({ value: element.typeAnnotation.literal });
   } else if (element.typeAnnotation.type === 'TSTypeLiteral') {
-    return "{ " + element.typeAnnotation.members.map(member => member.key.name + ": " + parseType(member)).join(", ") + " }";
+    return "{ " + element.typeAnnotation.members.map(member => (member.key.value ? ("'" + member.key.value + "'") : member.key.name) + ": " + parseType(member)).join(", ") + " }";
   } else if (element.typeAnnotation.type === 'TSIntersectionType') {
     return element.typeAnnotation.types.map(type => parseType({ typeAnnotation: type })).join(" & ");
   } else if (element.typeAnnotation.type === 'TSUndefinedKeyword') {
@@ -338,5 +338,4 @@ async function downloadForTesting(tag) {
 //   return elements;
 // }
 
-// await test('1.10.0');
-// await test('1.11.0');
+// await test('1.14.0-beta.1.21.20-preview.21');
