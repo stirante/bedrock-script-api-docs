@@ -71,7 +71,32 @@
         linkParents(element);
         map[element.name] = element;
       });
+      elements.forEach(element => {
+        element.inheritedMembers = getInheritedMembers(element, map);
+      });
       return map;
+    }
+
+    function getInheritedMembers(element, map) {
+      let inheritedMembers = [];
+      if (element.extends) {
+        for (const parent of element.extends) {
+          const parentElement = map[parent];
+          if (parentElement) {
+            inheritedMembers = [...inheritedMembers, ...getInheritedMembers(parentElement, map), ...parentElement.properties.filter(x => x.name !== 'constructor')];
+          }
+        }
+      }
+      if (element.superClass) {
+        const parent = map[element.superClass];
+        if (parent) {
+          inheritedMembers = [...inheritedMembers, ...getInheritedMembers(parent, map), ...parent.properties.filter(x => x.name !== 'constructor')];
+        }
+      }
+      // Remove duplicates
+      const asName = inheritedMembers.map(member => member.name);
+      inheritedMembers = inheritedMembers.filter((member, index) => asName.indexOf(member.name) === index);
+      return inheritedMembers;
     }
 
     export function compareStructures(a, b, path, versionA, versionB) {
@@ -144,7 +169,7 @@
         const changes = window.Diff.diffArrays(aValues.sort(), bValues.sort(), { comparator: (a, b) => a === b });
         processChanges(changes, a.name, b.name, changed, path, versionA, versionB);
       } else if ([ElementType.CLASS, ElementType.INTERFACE].includes(type)) {
-        compareProperties(a.properties || [], b.properties || [], changed, path, versionA, versionB);
+        compareProperties(a.properties || [], b.properties || [], a.inheritedMembers || [], b.inheritedMembers || [], changed, path, versionA, versionB);
       } else if ([ElementType.METHOD, ElementType.PROPERTY, ElementType.TYPE_ALIAS].includes(type)) {
         compareLeaves(a, b, changed, path, versionA, versionB);
       }
@@ -153,9 +178,9 @@
     /**
      * Compares two elements, that can have child elements and adds the result to the changed array.
      */
-    function compareProperties(aProperties = [], bProperties = [], changed, path, versionA, versionB) {
-      const aMap = buildMap(aProperties);
-      const bMap = buildMap(bProperties);
+    function compareProperties(aProperties, bProperties, aInherited, bInherited, changed, path, versionA, versionB) {
+      const aMap = buildMap([...aProperties, ...aInherited]);
+      const bMap = buildMap([...bProperties, ...bInherited]);
 
       aProperties.forEach(property => compareElements(aMap[property.name], bMap[property.name], changed, path, versionA, versionB));
       bProperties.forEach(property => aMap[property.name] || compareElements(aMap[property.name], bMap[property.name], changed, path, versionA, versionB));
@@ -166,7 +191,11 @@
      */
     function compareLeaves(a, b, changed, path, versionA, versionB) {
       if (a.type && b.type && toString(a) !== toString(b)) {
-        changed.push(Change.changed(b.parent?.name, toString(a), toString(b), makeHref(path, versionB, b)));
+        if (b.parent?.name !== a.parent?.name) {
+          changed.push(Change.changed(a.parent?.name, toString(a), toString(b), makeHref(path, versionB, b)));
+        } else {
+          changed.push(Change.changed(b.parent?.name, toString(a), toString(b), makeHref(path, versionB, b)));
+        }
       } else if (!a.type) {
         changed.push(Change.added(b.parent?.name, toString(b), makeHref(path, versionB, b)));
       } else if (!b.type) {

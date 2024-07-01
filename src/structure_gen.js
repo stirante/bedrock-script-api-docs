@@ -115,17 +115,16 @@ function parseClass(element) {
   return {
     type: ElementType.CLASS,
     name: element.id.name,
+    superClass: element.superClass ? element.superClass.name : undefined,
     properties: element.body.body.map(member => parse(member))
   };
 }
 
 function parseInterface(element) {
-  if (element.id.name === 'ActionManager') {
-    debugger;
-  }
   return {
     type: ElementType.INTERFACE,
     name: element.id.name,
+    extends: element.extends && element.extends.length > 0 ? element.extends.map(ext => parseExtendsElement(ext)) : undefined,
     properties: element.body.body.map(member => parse(member))
   };
 }
@@ -255,6 +254,15 @@ function parseType(element) {
   throw new Error("Unknown type annotation: " + element.typeAnnotation.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
 }
 
+function parseExtendsElement(element) {
+  if (element.type === 'TSExpressionWithTypeArguments') {
+    return element.expression.name;
+  } else if (element.type === 'TSQualifiedName') {
+    return element.left.name + "." + element.right.name;
+  }
+  throw new Error("Unknown extends element type: " + element.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
+}
+
 function parse(element) {
   if (element.type === 'TSEnumDeclaration') {
     return parseEnum(element);
@@ -322,13 +330,13 @@ async function downloadForTesting(tag) {
   });
 }
 
-function test(filename) {
-  const code = fs.readFileSync(filename, 'utf8');
-  const elements = generateStructure(code);
-  fs.writeFileSync("test.json", JSON.stringify(elements, null, 2));
-  return elements;
-}
+// async function test(version) {
+//   const fileName = await downloadForTesting(version);
+//   const code = fs.readFileSync(fileName, 'utf8');
+//   const elements = generateStructure(code);
+//   fs.writeFileSync("docs/server/" + version + "/structure.json", JSON.stringify(elements, null, 2));
+//   return elements;
+// }
 
-// const fileName = await downloadForTesting('1.8.0-beta.1.20.50-preview.21');
-// test(fileName);
-// let b = test("1.7.0-beta.ts");
+// await test('1.10.0');
+// await test('1.11.0');

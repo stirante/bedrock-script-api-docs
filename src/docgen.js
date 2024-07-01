@@ -78,7 +78,7 @@ function generateTypeDoc(path, moduleName, url, version, main, skipStructure, fa
     });
 }
 
-async function generateOnlyStructure(path, name, version) {
+async function generateOnlyStructure(path, name, version, mainFile) {
   console.log(`Generating structure.json for ${path} ${version}`);
   await fetchNpmPackageVersion(name, version)
     .then(([data, version]) => {
@@ -106,7 +106,7 @@ async function generateOnlyStructure(path, name, version) {
     })
     .then(() => {
       try {
-        let struct = generateStructure(fs.readFileSync('./tmp/package/index.d.ts', 'utf8'));
+        let struct = generateStructure(fs.readFileSync('./tmp/package/' + mainFile, 'utf8'));
         fs.writeFileSync(`./docs/${path}/${version}/structure.json`, JSON.stringify(struct));
       } catch (err) {
         console.error(err);

@@ -102,7 +102,9 @@ for (const p of packages) {
     }
 
     // This is only for refreshing structure.json files
-    // await generateOnlyStructure(p.path, p.name, version);
+    // if (!p.skipStructure) {
+    //   await generateOnlyStructure(p.path, p.name, version, p.main ?? "index.d.ts");
+    // }
 
     // Skip if the docs already exist
     if (fs.existsSync(`./docs/${p.path}/${version}`)) {
