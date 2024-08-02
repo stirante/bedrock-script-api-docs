@@ -61,6 +61,30 @@ const fixes = [
       fs.writeFileSync(indexPath, index);
     }
   },
+  {
+    name: 'Fixing missing WidgetCreateOptions interface in server-editor',
+    stage: POST_INSTALL,
+    canApply: (moduleName, version) => {
+      return moduleName === '@minecraft/server-editor' && version === '0.1.0-beta.1.21.30-preview.21'
+    },
+    apply: (pkgPath) => {
+      const indexPath = path.join(pkgPath, 'index.d.ts');
+      let index = fs.readFileSync(indexPath, 'utf-8');
+      const position = index.indexOf('export interface WidgetGroupCreateOptions');
+      const content = `export interface WidgetCreateOptions {
+    collisionOffset?: minecraftserver.Vector3;
+    collisionRadius?: number;
+    selectable?: boolean;
+    snapToBlockLocation?: boolean;
+    stateChangeEvent?: (arg: WidgetStateChangeEventData) => void;
+    visible?: boolean;
+}
+
+`;
+      index = index.slice(0, position) + content + index.slice(position);
+      fs.writeFileSync(indexPath, index);
+    }
+  }
 ]
 
 export function processVersion(moduleName, version, pkgPath, stage) {
