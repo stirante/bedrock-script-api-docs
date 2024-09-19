@@ -84,6 +84,30 @@ const fixes = [
       index = index.slice(0, position) + content + index.slice(position);
       fs.writeFileSync(indexPath, index);
     }
+  },
+  {
+    name: 'Fixing wrong package name in server-gametest',
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return moduleName === '@minecraft/server-gametest' && [
+        '0.1.0-rc.1.21.30-preview.23',
+        '0.1.0-rc.1.21.30-preview.24',
+        '0.1.0-rc.1.21.30-preview.25',
+        '0.1.0-rc.1.21.40-preview.20',
+        '0.1.0',
+      ].includes(version)
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, 'package.json');
+      let pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+      pkg.dependencies['@minecraft/server'] = '1.13.0';
+      delete pkg.dependencies['mojang-minecraft'];
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+      const indexPath = path.join(pkgPath, 'index.d.ts');
+      let index = fs.readFileSync(indexPath, 'utf-8');
+      index = index.replace("from 'mojang-minecraft'", "from '@minecraft/server'");
+      fs.writeFileSync(indexPath, index);
+    }
   }
 ]
 
