@@ -41,11 +41,17 @@
         return new Change(ChangeType.CHANGED, changeDetail, groupName, oldValue, newValue, href);
       }
       toString() {
+        let changeDiv = document.createElement('div');
+        changeDiv.className = 'change';
+        let chipDiv = document.createElement('div');
+        let a = document.createElement('a');
+        a.href = this.href;
         switch (this.type) {
           case ChangeType.ADDED:
-            return `<div class="change"><a href="${this.href}"><div class="chip chip-added">ADDED</div> ${this.changeDetail + this.newValue}</a></div>`;
+            chipDiv.className = 'chip chip-added';
+            return `<div class="change"><a href="${this.href}"><div class="chip chip-added">ADDED</div> ${this.changeDetail + this.newValue.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</a></div>`;
           case ChangeType.REMOVED:
-            return `<div class="change"><a href="${this.href}"><div class="chip chip-removed">REMOVED</div> ${this.changeDetail + this.oldValue}</a></div>`;
+            return `<div class="change"><a href="${this.href}"><div class="chip chip-removed">REMOVED</div> ${this.changeDetail + this.oldValue.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</a></div>`;
           case ChangeType.CHANGED:
             return `<div class="change"><a href="${this.href}"><div class="chip chip-changed">CHANGED</div> ${this.changeDetail}${highlightDifferences(this.oldValue, this.newValue)}</a></div>`;//${this.changeDetail + this.oldValue} -> ${this.newValue}
           default:

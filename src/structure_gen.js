@@ -202,16 +202,34 @@ function parseType(element) {
       return parseType({ value: element.value.argument });
     } else if (element.value.type === 'NumericLiteral') {
       return "number";
+    } else if (element.value.type === 'TemplateLiteral') {
+      let str = "";
+      for (let i = 0; i < element.value.quasis.length; i++) {
+        str += element.value.quasis[i].value.raw;
+        if (i < element.value.expressions.length) {
+          str += '${' + parseType({ value: element.value.expressions[i] }) + '}';
+        }
+      }
+      return "`" + str + "`";
+    } else if (element.value.type === 'TSTypeReference') {
+      if (element.value.typeName.type === 'TSQualifiedName') {
+        return element.value.typeName.left.name + "." + element.value.typeName.right.name;
+      }
+      return element.value.typeName.name ?? '';
     }
     throw new Error("Unknown literal type: " + element.value.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
   }
   if (element.typeAnnotation.type === 'TSStringKeyword') {
     return "string"
   } else if (element.typeAnnotation.type === 'TSTypeReference') {
-    if (element.typeAnnotation.typeName.type === 'TSQualifiedName') {
-      return element.typeAnnotation.typeName.left.name + "." + element.typeAnnotation.typeName.right.name;
+    let params = "";
+    if (element.typeAnnotation.typeParameters) {
+      params = "<" + element.typeAnnotation.typeParameters.params.map(param => parseType({ typeAnnotation: param })).join(", ") + ">";
     }
-    return element.typeAnnotation.typeName.name ?? '';
+    if (element.typeAnnotation.typeName.type === 'TSQualifiedName') {
+      return (element.typeAnnotation.typeName.left.name + "." + element.typeAnnotation.typeName.right.name) + params;
+    }
+    return (element.typeAnnotation.typeName.name ?? '') + params;
   } else if (element.typeAnnotation.type === 'TSArrayType') {
     return parseType({ typeAnnotation: element.typeAnnotation.elementType }) + "[]";
   } else if (element.typeAnnotation.type === 'TSUnionType') {
@@ -250,6 +268,10 @@ function parseType(element) {
     return "object";
   } else if (element.typeAnnotation.type === 'TSIndexedAccessType') {
     return parseType({ typeAnnotation: element.typeAnnotation.objectType }) + "[" + parseType({ typeAnnotation: element.typeAnnotation.indexType }) + "]";
+  } else if (element.typeAnnotation.type === 'TSConditionalType') {
+    return parseType({ typeAnnotation: element.typeAnnotation.checkType }) + " extends " + parseType({ typeAnnotation: element.typeAnnotation.extendsType }) + " ? " + parseType({ typeAnnotation: element.typeAnnotation.trueType }) + " : " + parseType({ typeAnnotation: element.typeAnnotation.falseType });
+  } else if (element.typeAnnotation.type === 'TSTypeOperator') {
+    return element.typeAnnotation.operator + " " + parseType({ typeAnnotation: element.typeAnnotation.typeAnnotation });
   }
   throw new Error("Unknown type annotation: " + element.typeAnnotation.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
 }
@@ -339,3 +361,7 @@ async function downloadForTesting(tag) {
 // }
 
 // await test('1.14.0-beta.1.21.20-preview.21');
+
+// const code = fs.readFileSync('./tmp/package/index.d.ts', 'utf8');
+// const elements = generateStructure(code);
+// fs.writeFileSync("./structure.json", JSON.stringify(elements, null, 2));
