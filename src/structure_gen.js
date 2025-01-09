@@ -272,6 +272,10 @@ function parseType(element) {
     return parseType({ typeAnnotation: element.typeAnnotation.checkType }) + " extends " + parseType({ typeAnnotation: element.typeAnnotation.extendsType }) + " ? " + parseType({ typeAnnotation: element.typeAnnotation.trueType }) + " : " + parseType({ typeAnnotation: element.typeAnnotation.falseType });
   } else if (element.typeAnnotation.type === 'TSTypeOperator') {
     return element.typeAnnotation.operator + " " + parseType({ typeAnnotation: element.typeAnnotation.typeAnnotation });
+  } else if (element.typeAnnotation.type === 'TSTypeQuery') {
+    return "typeof " + parseType({ typeAnnotation: element.typeAnnotation.exprName });
+  } else if (element.typeAnnotation.type === 'TSQualifiedName') {
+    return element.typeAnnotation.left.name + "." + element.typeAnnotation.right.name;
   }
   throw new Error("Unknown type annotation: " + element.typeAnnotation.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
 }
