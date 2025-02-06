@@ -28,8 +28,8 @@ function processDocDir(dir) {
     const versionPath = path.join(dir, version);
     const relativePath = path.relative(rootDir, versionPath);
     const stat = fs.statSync(versionPath);
-    // If it is a directory and modification time is within last 24 hours
-    if (stat.isDirectory() && stat.mtimeMs > Date.now() - 24 * 60 * 60 * 1000) {
+    // If it is a directory and modification time is within last 1 hour
+    if (stat.isDirectory() && stat.mtimeMs > Date.now() - 1 * 60 * 60 * 1000) {
       sync(versionPath, relativePath);
       continue;
     } else if (stat.isDirectory()) {
