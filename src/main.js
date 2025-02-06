@@ -66,6 +66,10 @@ const packages = [
     path: "debug-utilities"
   },
   {
+    name: "@minecraft/diagnostics",
+    path: "diagnostics"
+  },
+  {
     name: "@minecraft/math",
     path: "math",
     main: "lib/types/math.d.ts"
