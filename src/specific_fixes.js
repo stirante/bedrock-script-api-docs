@@ -108,6 +108,29 @@ const fixes = [
       index = index.replace("from 'mojang-minecraft'", "from '@minecraft/server'");
       fs.writeFileSync(indexPath, index);
     }
+  },
+  {
+    name: 'Fixing missing vanilla-data',
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return [
+        '1.0.0-beta.1.21.70-preview.20',
+        '0.1.0-beta.1.21.70-preview.20',
+        '2.0.0-beta.1.21.70-preview.20',
+      ].includes(version)
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, 'package.json');
+      let pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+      if (pkg.peerDependencies === undefined) {
+        pkg.overrides = {
+          '@minecraft/vanilla-data': '1.21.70-preview.20'
+        };
+      } else {
+        pkg.peerDependencies['@minecraft/vanilla-data'] = '1.21.70-preview.20';
+      }
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+    }
   }
 ]
 
