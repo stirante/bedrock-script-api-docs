@@ -3,3 +3,4 @@ node_modules/
 failed.txt
 tmp/
 docs/
+*.reg

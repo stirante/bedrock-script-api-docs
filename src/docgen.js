@@ -45,7 +45,7 @@ function generateTypeDoc(path, moduleName, url, version, main, skipStructure, fa
         processVersion(moduleName, version, './tmp/package', POST_INSTALL);
         // Following command was created through trial, error and frustration.
         // Still throws some errors and warnings, but it works (mostly).
-        const child = exec(`npx typedoc --out ./docs --hideGenerator --searchInComments --entryPoints ./${main} ./tsconfig.json`, { cwd: './tmp/package' }, (err, stdout, stderr) => {
+        const child = exec(`npx typedoc --plugin ../../plugin.js --out ./docs --hideGenerator --searchInComments --entryPoints ./${main} ./tsconfig.json`, { cwd: './tmp/package' }, (err, stdout, stderr) => {
           if (err) {
             reject(err);
           } else {
