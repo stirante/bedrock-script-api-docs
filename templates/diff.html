@@ -72,10 +72,10 @@
     }
 
     function buildMap(elements) {
-      const map = {};
+      const map = new Map();
       elements.forEach(element => {
         linkParents(element);
-        map[element.name] = element;
+        map.set(element.name, element);
       });
       elements.forEach(element => {
         element.inheritedMembers = getInheritedMembers(element, map);
@@ -87,14 +87,14 @@
       let inheritedMembers = [];
       if (element.extends) {
         for (const parent of element.extends) {
-          const parentElement = map[parent];
+          const parentElement = map.get(parent);
           if (parentElement) {
             inheritedMembers = [...inheritedMembers, ...getInheritedMembers(parentElement, map), ...parentElement.properties.filter(x => x.name !== 'constructor')];
           }
         }
       }
       if (element.superClass) {
-        const parent = map[element.superClass];
+        const parent = map.get(element.superClass);
         if (parent) {
           inheritedMembers = [...inheritedMembers, ...getInheritedMembers(parent, map), ...parent.properties.filter(x => x.name !== 'constructor')];
         }
@@ -108,12 +108,12 @@
     export function compareStructures(a, b, path, versionA, versionB) {
       const aMap = buildMap(a);
       const bMap = buildMap(b);
-      const aKeys = Object.keys(aMap).sort();
-      const bKeys = Object.keys(bMap).sort();
+      const aKeys = [...aMap.keys()].sort();
+      const bKeys = [...bMap.keys()].sort();
       let changed = [];
 
-      aKeys.forEach(name => compareElements(aMap[name], bMap[name], changed, path, versionA, versionB));
-      bKeys.forEach(name => aMap[name] || compareElements(aMap[name], bMap[name], changed, path, versionA, versionB));
+      aKeys.forEach(name => compareElements(aMap.get(name), bMap.get(name), changed, path, versionA, versionB));
+      bKeys.forEach(name => aMap.get(name) || compareElements(aMap.get(name), bMap.get(name), changed, path, versionA, versionB));
 
       return changed;
     }
@@ -188,8 +188,8 @@
       const aMap = buildMap([...aProperties, ...aInherited]);
       const bMap = buildMap([...bProperties, ...bInherited]);
 
-      aProperties.forEach(property => compareElements(aMap[property.name], bMap[property.name], changed, path, versionA, versionB));
-      bProperties.forEach(property => aMap[property.name] || compareElements(aMap[property.name], bMap[property.name], changed, path, versionA, versionB));
+      aProperties.forEach(property => compareElements(aMap.get(property.name), bMap.get(property.name), changed, path, versionA, versionB));
+      bProperties.forEach(property => aMap.get(property.name) || compareElements(aMap.get(property.name), bMap.get(property.name), changed, path, versionA, versionB));
     }
 
     /**
