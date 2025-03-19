@@ -216,8 +216,11 @@ function parseType(element) {
         return element.value.typeName.left.name + "." + element.value.typeName.right.name;
       }
       return element.value.typeName.name ?? '';
+    } else if (element.value.type === 'TSStringKeyword') {
+      return "string";
     }
-    throw new Error("Unknown literal type: " + element.value.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
+    const loc = element.loc ?? element.value.loc;
+    throw new Error("Unknown literal type: " + element.value.type + " at " + loc.start.line + ":" + loc.start.column);
   }
   if (element.typeAnnotation.type === 'TSStringKeyword') {
     return "string"
@@ -276,8 +279,11 @@ function parseType(element) {
     return "typeof " + parseType({ typeAnnotation: element.typeAnnotation.exprName });
   } else if (element.typeAnnotation.type === 'TSQualifiedName') {
     return element.typeAnnotation.left.name + "." + element.typeAnnotation.right.name;
+  } else if (element.typeAnnotation.type === 'TSTupleType') {
+    return "[" + element.typeAnnotation.elementTypes.map((x) => parseType({ typeAnnotation: x })).join(", ") + "]";
   }
-  throw new Error("Unknown type annotation: " + element.typeAnnotation.type + " at " + element.loc.start.line + ":" + element.loc.start.column);
+  const loc = element.loc ?? element.typeAnnotation.loc;
+  throw new Error("Unknown type annotation: " + element.typeAnnotation.type + " at " + loc.start.line + ":" + loc.start.column);
 }
 
 function parseExtendsElement(element) {
