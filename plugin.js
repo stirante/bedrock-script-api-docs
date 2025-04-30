@@ -2,8 +2,14 @@ import { Converter } from "typedoc";
 import { DefaultTheme } from "typedoc";
 
 const Filters = {
-  '@worldMutation': ["This function can't be called in read-only mode.", "This property can't be edited in read-only mode."],
-  '@earlyExecution': ["This function can be called in early-execution mode.", "This property can be edited in early-execution mode."],
+  '@worldMutation': {
+    "match": ["This function can't be called in read-only mode.", "This property can't be edited in read-only mode."],
+    "invert": false
+  },
+  '@notEarlyExecution': {
+    "match": ["This function can be called in early-execution mode.", "This property can be edited in early-execution mode."],
+    "invert": true
+  },
 }
 
 function toKebabCase(str) {
@@ -30,7 +36,7 @@ export function load(app) {
   app.converter.on(Converter.EVENT_RESOLVE, (context, reflection) => {
     if (reflection.comment) {
       for (const filter of Object.keys(Filters)) {
-        if (commentContainsPhrase(reflection.comment, Filters[filter])) {
+        if (commentContainsPhrase(reflection.comment, Filters[filter].match) === !Filters[filter].invert) {
           if (!ids[filter]) {
             ids[filter] = [];
           }
