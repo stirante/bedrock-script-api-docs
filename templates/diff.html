@@ -143,17 +143,17 @@
         if (part.added) {
           if (i > 0 && changes[i - 1].removed) {
             for (let j = 0; j < part.count; j++) {
-              changed.push(Change.changed(aName, `${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`, `/script/${path}/${versionB}/enums/${bName}.html#${part.value[j]}`, `${bName} type: `));
+              changed.push(Change.changed(aName, `${aName}.${changes[i - 1].value[j]}`, `${bName}.${part.value[j]}`, `/script/${path}/${versionB}/enums/${bName}.html#${part.value[j].toLowerCase()}`, `${bName} type: `));
             }
             i++; // skip next part as it's already processed
           } else {
-            changed.push(...part.value.map(value => Change.added(bName, `${bName}.${value}`, `/script/${path}/${versionB}/enums/${bName}.html#${value}`)));
+            changed.push(...part.value.map(value => Change.added(bName, `${bName}.${value}`, `/script/${path}/${versionB}/enums/${bName}.html#${value.toLowerCase()}`)));
           }
         } else if (part.removed) {
           if (i < changes.length - 1 && changes[i + 1].added) {
             // do nothing as this part will be handled in the next iteration
           } else {
-            changed.push(...part.value.map(value => Change.removed(aName, `${aName}.${value}`, `/script/${path}/${versionA}/enums/${aName}.html#${value}`)));
+            changed.push(...part.value.map(value => Change.removed(aName, `${aName}.${value}`, `/script/${path}/${versionA}/enums/${aName}.html#${value.toLowerCase()}`)));
           }
         }
         i++;
@@ -238,7 +238,7 @@
       if (!element.parent) {
         return `/script/${path}/${version}/${elementType}/${element.name}${elementType === 'variables' ? '-1' : ''}.html`;
       }
-      return `/script/${path}/${version}/${elementType}/${element.parent.name}.html#${element.name}`;
+      return `/script/${path}/${version}/${elementType}/${element.parent.name}.html#${element.name.toLowerCase()}`;
     }
 
     function highlightDifferences(str1, str2) {
