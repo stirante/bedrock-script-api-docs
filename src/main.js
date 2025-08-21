@@ -5,6 +5,8 @@ import { fetchNpmPackage, fetchNpmPackageVersion } from './npm_utils.js';
 import { generateTypeDoc, generateOnlyStructure } from './docgen.js';
 import template from './template.js';
 
+const isNoFail = process.argv.includes('--no-fail');
+
 function createRedirect(tag, tags, pack, availableVersions) {
   if (tags[tag] && availableVersions.indexOf(tags[tag]) !== -1) {
     let redirect = template('redirect.html', {
@@ -170,4 +172,6 @@ fs.writeFileSync('./docs/diff.json', JSON.stringify(diffInfo));
 fs.copyFileSync('./templates/diff.html', './docs/diff.html');
 
 // Write the failed packages file
-fs.writeFileSync('./failed.txt', failed.join('\n'));
+if (!isNoFail) {
+  fs.writeFileSync('./failed.txt', failed.join('\n'));
+}

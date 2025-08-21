@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "node src/main.js",
+    "test-build": "node src/main.js --no-fail",
     "sync": "node src/better_sync.js",
     "sync-diff": "aws s3 cp ./templates/diff.html s3://stirante.com/script/diff.html",
     "sync-style": "aws s3 cp ./templates/style.css s3://stirante.com/script/style.css",
