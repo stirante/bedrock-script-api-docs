@@ -189,6 +189,8 @@ const fixes = [
           "2.3.0-beta.1.21.110-preview.23",
           "2.3.0-beta.1.21.110-preview.24",
           "2.3.0-beta.1.21.110-preview.25",
+          "2.3.0-beta.1.21.110-preview.26",
+          "2.4.0-beta.1.21.120-preview.20",
         ].includes(version)
       );
     },
@@ -210,6 +212,8 @@ const fixes = [
           "0.1.0-beta.1.21.110-preview.23",
           "0.1.0-beta.1.21.110-preview.24",
           "0.1.0-beta.1.21.110-preview.25",
+          "0.1.0-beta.1.21.110-preview.26",
+          "0.1.0-beta.1.21.120-preview.20",
         ].includes(version)
       );
     },
@@ -220,10 +224,33 @@ const fixes = [
         "@minecraft/vanilla-data": "1.21.110-preview.25",
       };
       pkg.peerDependencies = {
-        ...pkg.peerDependencies ?? {},
+        ...(pkg.peerDependencies ?? {}),
         "@minecraft/vanilla-data": "1.21.110-preview.25",
       };
       fs.writeFileSync(packagePath, JSON.stringify(pkg));
+    },
+  },
+  {
+    name: "Fixing incorrect minecraft/server alias",
+    stage: POST_INSTALL,
+    canApply: (moduleName, version) => {
+      return (
+        (moduleName === "@minecraft/server-editor" &&
+          ["0.1.0-beta.1.21.120-preview.20"].includes(version)) ||
+        (moduleName === "@minecraft/server-ui" &&
+          ["2.1.0-beta.1.21.120-preview.20"].includes(version)) ||
+        ((moduleName === "@minecraft/server-gametest" || moduleName === "@minecraft/server-net" || moduleName === "@minecraft/server-admin" || moduleName === "@minecraft/debug-utilities") &&
+          ["1.0.0-beta.1.21.120-preview.20"].includes(version))
+      );
+    },
+    apply: (pkgPath) => {
+      const indexPath = path.join(pkgPath, "index.d.ts");
+      const index = fs.readFileSync(indexPath, "utf-8");
+      const fixed = index.replaceAll(
+        "minecraftserverbindings.",
+        "minecraftserver."
+      );
+      fs.writeFileSync(indexPath, fixed);
     },
   },
 ];
