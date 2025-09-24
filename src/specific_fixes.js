@@ -193,6 +193,7 @@ const fixes = [
           "2.4.0-beta.1.21.120-preview.20",
           "2.4.0-beta.1.21.120-preview.21",
           "2.4.0-beta.1.21.120-preview.22",
+          "2.4.0-beta.1.21.120-preview.23",
         ].includes(version)
       );
     },
@@ -218,6 +219,7 @@ const fixes = [
           "0.1.0-beta.1.21.120-preview.20",
           "0.1.0-beta.1.21.120-preview.21",
           "0.1.0-beta.1.21.120-preview.22",
+          "0.1.0-beta.1.21.120-preview.23",
         ].includes(version)
       );
     },
