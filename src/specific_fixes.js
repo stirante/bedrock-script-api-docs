@@ -259,6 +259,22 @@ const fixes = [
       fs.writeFileSync(indexPath, fixed);
     },
   },
+  {
+    name: "Fixing minecraft/server version",
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return (
+        moduleName === "@minecraft/server-editor" &&
+          ["0.1.0-beta.1.12.111-stable", "0.1.0-beta.1.21.111-stable"].includes(version)
+      );
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, "package.json");
+      let pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
+      pkg.peerDependencies["@minecraft/server"] = pkg.peerDependencies["@minecraft/server"].replace("^", "");
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+    },
+  },
 ];
 
 export function processVersion(moduleName, version, pkgPath, stage) {
