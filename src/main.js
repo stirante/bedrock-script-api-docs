@@ -36,12 +36,20 @@ const packages = [
     path: 'server-gametest'
   },
   {
+    name: '@minecraft/server-graphics',
+    path: 'server-graphics'
+  },
+  {
     name: '@minecraft/server-editor',
     path: 'server-editor'
   },
   {
     name: '@minecraft/server-net',
     path: 'server-net'
+  },
+  {
+    name: '@minecraft/server-admin',
+    path: 'server-admin'
   },
   {
     name: '@minecraft/server-admin',

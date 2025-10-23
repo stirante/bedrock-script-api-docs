@@ -218,6 +218,8 @@ function parseType(element) {
       return element.value.typeName.name ?? '';
     } else if (element.value.type === 'TSStringKeyword') {
       return "string";
+    } else if (element.value.type === 'BooleanLiteral') {
+      return element.value.value ? "true" : "false";
     }
     const loc = element.loc ?? element.value.loc;
     throw new Error("Unknown literal type: " + element.value.type + " at " + loc.start.line + ":" + loc.start.column);

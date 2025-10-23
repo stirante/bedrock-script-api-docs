@@ -265,13 +265,29 @@ const fixes = [
     canApply: (moduleName, version) => {
       return (
         moduleName === "@minecraft/server-editor" &&
-          ["0.1.0-beta.1.12.111-stable", "0.1.0-beta.1.21.111-stable", "0.1.0-beta.1.21.113-stable"].includes(version)
+          ["0.1.0-beta.1.12.111-stable", "0.1.0-beta.1.21.111-stable", "0.1.0-beta.1.21.113-stable", "0.1.0-beta.1.21.113-stable", "0.1.0-beta.1.21.114-stable"].includes(version)
       );
     },
     apply: (pkgPath) => {
       const packagePath = path.join(pkgPath, "package.json");
       let pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
       pkg.peerDependencies["@minecraft/server"] = pkg.peerDependencies["@minecraft/server"].replace("^", "");
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+    },
+  },
+  {
+    name: "Fixing minecraft/server version",
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return (
+        moduleName === "@minecraft/server-graphics" &&
+          ["1.0.0-beta.1.21.130-preview.22"].includes(version)
+      );
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, "package.json");
+      let pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
+      pkg.peerDependencies["@minecraft/server"] = pkg.peerDependencies["@minecraft/server"].split(" || ")[2].replace("^", "");
       fs.writeFileSync(packagePath, JSON.stringify(pkg));
     },
   },
