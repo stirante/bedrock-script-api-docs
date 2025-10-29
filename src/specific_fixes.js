@@ -265,7 +265,7 @@ const fixes = [
     canApply: (moduleName, version) => {
       return (
         moduleName === "@minecraft/server-editor" &&
-          ["0.1.0-beta.1.12.111-stable", "0.1.0-beta.1.21.111-stable", "0.1.0-beta.1.21.113-stable", "0.1.0-beta.1.21.113-stable", "0.1.0-beta.1.21.114-stable"].includes(version)
+          ["0.1.0-beta.1.12.111-stable", "0.1.0-beta.1.21.111-stable", "0.1.0-beta.1.21.113-stable", "0.1.0-beta.1.21.113-stable", "0.1.0-beta.1.21.114-stable", "0.1.0-beta.1.21.120-stable"].includes(version)
       );
     },
     apply: (pkgPath) => {
