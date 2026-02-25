@@ -12,6 +12,12 @@ let missingDistributionLogged = false;
 
 const rootDir = './docs';
 const alwaysUpload = ['index.html', 'style.css', 'diff.html', 'diff.json'];
+const awsRegion = (process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1').trim();
+const awsEnv = {
+  ...process.env,
+  AWS_REGION: awsRegion,
+  AWS_DEFAULT_REGION: awsRegion
+};
 
 if (!fs.existsSync(rootDir)) {
   if (isDryRun) {
@@ -62,7 +68,7 @@ function copy(local, remote) {
     return;
   }
   console.log(`Uploading ${fixed}`);
-  execFileSync('aws', ['s3', 'cp', local, remoteUrl], { stdio: 'pipe' });
+  execFileSync('aws', ['s3', 'cp', local, remoteUrl], { stdio: 'pipe', env: awsEnv });
   if (!cloudfrontDistributionId) {
     if (!missingDistributionLogged) {
       console.warn('CLOUDFRONT_DISTRIBUTION_ID is not set; skipping CloudFront invalidation.');
@@ -73,7 +79,7 @@ function copy(local, remote) {
 
   const invalidationPath = `${s3PrefixPath()}/${fixed.replace(/^\/+/, '')}`.replaceAll('//', '/');
   console.log(`Invalidating ${invalidationPath}`);
-  execFileSync('aws', ['cloudfront', 'create-invalidation', '--distribution-id', cloudfrontDistributionId, '--paths', invalidationPath], { stdio: 'pipe' });
+  execFileSync('aws', ['cloudfront', 'create-invalidation', '--distribution-id', cloudfrontDistributionId, '--paths', invalidationPath], { stdio: 'pipe', env: awsEnv });
 }
 
 function sync(local, remote) {
@@ -84,5 +90,5 @@ function sync(local, remote) {
     return;
   }
   console.log(`Syncing ${fixed}`);
-  execFileSync('aws', ['s3', 'sync', local, remoteUrl], { stdio: 'pipe' });
+  execFileSync('aws', ['s3', 'sync', local, remoteUrl], { stdio: 'pipe', env: awsEnv });
 }

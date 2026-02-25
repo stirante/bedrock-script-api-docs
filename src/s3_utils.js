@@ -5,6 +5,19 @@ function normalizePart(value) {
   return value.replace(/^\/+|\/+$/g, '');
 }
 
+function resolveAwsRegion() {
+  return (process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1').trim();
+}
+
+function awsCliEnv() {
+  const region = resolveAwsRegion();
+  return {
+    ...process.env,
+    AWS_REGION: region,
+    AWS_DEFAULT_REGION: region
+  };
+}
+
 function getS3Config() {
   const bucket = (process.env.S3_DOCS_BUCKET || 'stirante.com').trim();
   const prefix = normalizePart((process.env.S3_DOCS_PREFIX || 'script').trim());
@@ -22,7 +35,10 @@ function toS3Url(...parts) {
 export function listRemoteDirectories(...parts) {
   const path = `${toS3Url(...parts)}/`;
   try {
-    const output = execFileSync('aws', ['s3', 'ls', path], { encoding: 'utf-8' });
+    const output = execFileSync('aws', ['s3', 'ls', path], {
+      encoding: 'utf-8',
+      env: awsCliEnv()
+    });
     const items = output
       .split(/\r?\n/)
       .map((line) => line.match(/PRE (.+)\/$/)?.[1])
