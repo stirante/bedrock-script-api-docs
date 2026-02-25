@@ -8,6 +8,15 @@ import { generateStructure } from './structure_gen.js';
 import { fetchNpmPackageVersion } from './npm_utils.js';
 import { processVersion, POST_INSTALL, PRE_INSTALL } from './specific_fixes.js';
 
+function toolEnvWithoutAwsSecrets() {
+  const env = { ...process.env };
+  delete env.AWS_ACCESS_KEY_ID;
+  delete env.AWS_SECRET_ACCESS_KEY;
+  delete env.AWS_SESSION_TOKEN;
+  delete env.AWS_SECURITY_TOKEN;
+  return env;
+}
+
 function generateTypeDoc(path, moduleName, url, version, main, skipStructure, failed) {
   return fetch(url)
     .then((response) => {
@@ -40,12 +49,16 @@ function generateTypeDoc(path, moduleName, url, version, main, skipStructure, fa
     })
     .then(() => {
       return new Promise((resolve, reject) => {
+        const toolEnv = toolEnvWithoutAwsSecrets();
         processVersion(moduleName, version, './tmp/package', PRE_INSTALL);
-        execSync('npm install', { cwd: './tmp/package' });
+        execSync('npm install', { cwd: './tmp/package', env: toolEnv });
         processVersion(moduleName, version, './tmp/package', POST_INSTALL);
         // Following command was created through trial, error and frustration.
         // Still throws some errors and warnings, but it works (mostly).
-        const child = exec(`npx typedoc --plugin ../../plugin.js --out ./docs --hideGenerator --searchInComments --entryPoints ./${main} ./tsconfig.json`, { cwd: './tmp/package' }, (err, stdout, stderr) => {
+        const child = exec(`npx typedoc --plugin ../../plugin.js --out ./docs --hideGenerator --searchInComments --entryPoints ./${main} ./tsconfig.json`, {
+          cwd: './tmp/package',
+          env: toolEnv
+        }, (err, stdout, stderr) => {
           if (err) {
             reject(err);
           } else {

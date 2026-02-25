@@ -37,7 +37,8 @@ export function listRemoteDirectories(...parts) {
   try {
     const output = execFileSync('aws', ['s3', 'ls', path], {
       encoding: 'utf-8',
-      env: awsCliEnv()
+      env: awsCliEnv(),
+      stdio: ['ignore', 'pipe', 'pipe']
     });
     const items = output
       .split(/\r?\n/)
@@ -50,10 +51,15 @@ export function listRemoteDirectories(...parts) {
         console.warn('AWS CLI is not installed or not in PATH. Install it to enable S3 listing/upload.');
         missingAwsCliLogged = true;
       }
-      return new Set();
+      throw new Error('AWS CLI is not installed or not in PATH.');
     }
-    console.warn(`Failed to list remote path ${path}: ${err.message}`);
-    return new Set();
+
+    const stderr = String(err?.stderr || '');
+    if (stderr.includes('Unable to locate credentials')) {
+      throw new Error('AWS credentials are not configured for S3 listing.');
+    }
+
+    throw new Error(`Failed to list remote path ${path}: ${err.message}`);
   }
 }
 
