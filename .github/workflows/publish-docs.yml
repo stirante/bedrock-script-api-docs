@@ -36,11 +36,8 @@ jobs:
           fi
           aws --version
 
-      - name: Build missing versions
-        run: npm run build
-
       - name: Upload missing versions
-        run: npm run sync
+        run: npm run all
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
