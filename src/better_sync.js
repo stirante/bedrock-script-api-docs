@@ -1,72 +1,68 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
+import { loadEnvFile } from './env.js';
+import { listRemoteDirectories, s3Path, s3PrefixPath } from './s3_utils.js';
 
-// Load environment variables from .env if present without overriding existing values.
-const envPath = path.resolve(process.cwd(), '.env');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf-8');
-  for (const rawLine of envContent.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) {
-      continue;
-    }
-    const separatorIndex = line.indexOf('=');
-    if (separatorIndex === -1) {
-      continue;
-    }
-    const key = line.slice(0, separatorIndex).trim();
-    const value = line.slice(separatorIndex + 1).trim();
-    if (!(key in process.env)) {
-      process.env[key] = value;
-    }
-  }
-}
+loadEnvFile();
 
+const isDryRun = process.argv.includes('--dry-run');
 const cloudfrontDistributionId = process.env.CLOUDFRONT_DISTRIBUTION_ID?.trim();
 let missingDistributionLogged = false;
 
-// Mock execSync for testing
-// function execSync(cmd) {
-//   console.log(cmd);
-//   return { stdout: '', stderr: '' };
-// }
-
 const rootDir = './docs';
-const remoteRoot = 's3://stirante.com/script/';
+const alwaysUpload = ['index.html', 'style.css', 'diff.html', 'diff.json'];
 
-// Copy all files in rootDir with `aws s3 cp`
-const files = fs.readdirSync(rootDir);
-for (const file of files) {
-  const filePath = path.join(rootDir, file);
-  if (fs.statSync(filePath).isDirectory()) {
-    processDocDir(filePath);
-    continue;
+if (!fs.existsSync(rootDir)) {
+  if (isDryRun) {
+    console.log(`[DRY] Missing ${rootDir}; nothing to upload.`);
+    process.exit(0);
   }
-  copy(filePath, file);
+  throw new Error(`Missing ${rootDir}. Run "npm run build" first.`);
 }
 
-function processDocDir(dir) {
-  const versions = fs.readdirSync(dir);
-  for (const version of versions) {
-    const versionPath = path.join(dir, version);
-    const relativePath = path.relative(rootDir, versionPath);
-    const stat = fs.statSync(versionPath);
-    // If it is a directory and modification time is within last 1 hour
-    if (stat.isDirectory() && stat.mtimeMs > Date.now() - 1 * 60 * 60 * 1000) {
-      sync(versionPath, relativePath);
-      continue;
-    } else if (stat.isDirectory()) {
+const files = fs.readdirSync(rootDir, { withFileTypes: true });
+for (const file of files) {
+  const filePath = path.join(rootDir, file.name);
+  if (file.isDirectory()) {
+    uploadMissingVersions(filePath, file.name);
+    continue;
+  }
+  if (alwaysUpload.includes(file.name)) {
+    copy(filePath, file.name);
+  }
+}
+
+function uploadMissingVersions(localModuleDir, modulePath) {
+  const remoteVersions = listRemoteDirectories(modulePath);
+  const entries = fs.readdirSync(localModuleDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      if (entry.name === 'index.html') {
+        copy(path.join(localModuleDir, entry.name), `${modulePath}/${entry.name}`);
+      }
       continue;
     }
-    copy(versionPath, relativePath);
+
+    if (remoteVersions.has(entry.name)) {
+      continue;
+    }
+
+    const localVersionPath = path.join(localModuleDir, entry.name);
+    sync(localVersionPath, `${modulePath}/${entry.name}`);
   }
 }
 
 function copy(local, remote) {
   const fixed = remote.replaceAll('\\', '/').replaceAll('//', '/');
+  const remoteUrl = s3Path(fixed);
+  if (isDryRun) {
+    console.log(`[DRY] Upload ${local} -> ${remoteUrl}`);
+    return;
+  }
   console.log(`Uploading ${fixed}`);
-  execSync(`aws s3 cp ${local} ${remoteRoot}${fixed}`, { stdio: 'pipe' });
+  execFileSync('aws', ['s3', 'cp', local, remoteUrl], { stdio: 'pipe' });
   if (!cloudfrontDistributionId) {
     if (!missingDistributionLogged) {
       console.warn('CLOUDFRONT_DISTRIBUTION_ID is not set; skipping CloudFront invalidation.');
@@ -75,16 +71,18 @@ function copy(local, remote) {
     return;
   }
 
-  const invalidationPath = `/${fixed.replace(/^\/+/, '')}`;
+  const invalidationPath = `${s3PrefixPath()}/${fixed.replace(/^\/+/, '')}`.replaceAll('//', '/');
   console.log(`Invalidating ${invalidationPath}`);
-  execSync(
-    `aws cloudfront create-invalidation --distribution-id ${cloudfrontDistributionId} --paths "${invalidationPath}"`,
-    { stdio: 'pipe' },
-  );
+  execFileSync('aws', ['cloudfront', 'create-invalidation', '--distribution-id', cloudfrontDistributionId, '--paths', invalidationPath], { stdio: 'pipe' });
 }
 
 function sync(local, remote) {
   const fixed = remote.replaceAll('\\', '/').replaceAll('//', '/');
+  const remoteUrl = s3Path(fixed);
+  if (isDryRun) {
+    console.log(`[DRY] Sync ${local} -> ${remoteUrl}`);
+    return;
+  }
   console.log(`Syncing ${fixed}`);
-  execSync(`aws s3 sync ${local} ${remoteRoot}${fixed}`, { stdio: 'pipe' });
+  execFileSync('aws', ['s3', 'sync', local, remoteUrl], { stdio: 'pipe' });
 }

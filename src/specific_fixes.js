@@ -291,6 +291,74 @@ const fixes = [
       fs.writeFileSync(packagePath, JSON.stringify(pkg));
     },
   },
+  {
+    name: "Pinning minecraft/server peer version for server-editor",
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return moduleName === "@minecraft/server-editor";
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, "package.json");
+      let pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
+      const serverPeer = pkg.peerDependencies?.["@minecraft/server"];
+      if (typeof serverPeer !== "string" || !serverPeer.startsWith("^")) {
+        return;
+      }
+
+      const pinned = serverPeer.slice(1);
+      pkg.peerDependencies["@minecraft/server"] = pinned;
+      pkg.overrides = {
+        ...(pkg.overrides ?? {}),
+        "@minecraft/server": pinned,
+      };
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+    },
+  },
+  {
+    name: "Fixing missing minecraft/server dependency version in server-ui",
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return (
+        moduleName === "@minecraft/server-ui" &&
+        version === "1.1.0-rc.1.20.10-preview.23"
+      );
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, "package.json");
+      let pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
+      pkg.dependencies = {
+        ...(pkg.dependencies ?? {}),
+        "@minecraft/server": "1.3.0-rc.1.20.10-preview.23",
+      };
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+    },
+  },
+  {
+    name: "Removing missing server-editor-bindings dependency",
+    stage: PRE_INSTALL,
+    canApply: (moduleName, version) => {
+      return (
+        moduleName === "@minecraft/server-editor" &&
+        version === "0.1.0-beta.1.20.10-stable"
+      );
+    },
+    apply: (pkgPath) => {
+      const packagePath = path.join(pkgPath, "package.json");
+      let pkg = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
+      if (pkg.dependencies?.["@minecraft/server-editor-bindings"]) {
+        delete pkg.dependencies["@minecraft/server-editor-bindings"];
+      }
+      fs.writeFileSync(packagePath, JSON.stringify(pkg));
+
+      const indexPath = path.join(pkgPath, "index.d.ts");
+      let index = fs.readFileSync(indexPath, "utf-8");
+      index = index.replace(
+        "import * as minecraftservereditorbindings from '@minecraft/server-editor-bindings';",
+        ""
+      );
+      fs.writeFileSync(indexPath, index);
+    },
+  },
 ];
 
 export function processVersion(moduleName, version, pkgPath, stage) {

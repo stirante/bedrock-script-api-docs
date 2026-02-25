@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+blocked_file=".env"
+
+if git ls-files --error-unmatch "$blocked_file" >/dev/null 2>&1; then
+  echo "Push blocked: $blocked_file is tracked. Remove it from git before pushing."
+  echo "Run: git rm --cached $blocked_file"
+  exit 1
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Skip deleted refs.
+  if [[ "$local_sha" == "0000000000000000000000000000000000000000" ]]; then
+    continue
+  fi
+
+  if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
+    range="$local_sha"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  if git log --format='' --name-only --diff-filter=AM "$range" -- "$blocked_file" | grep -q "^$blocked_file$"; then
+    echo "Push blocked: commits being pushed contain $blocked_file."
+    echo "Rewrite history to remove it before pushing."
+    exit 1
+  fi
+done
+

@@ -13,22 +13,45 @@ This code optimally should be run incrementally, because it skips any packages t
 
 1. Clone this repository.
 2. Run `npm install` to install dependencies.
-3. Configure the AWS CLI with your credentials.
-4. Change the bucket in `package.json` to the bucket you want to upload the documentation to.
+3. Configure environment variables:
+   - Local: copy `.env.example` to `.env` and fill values.
+   - CI (GitHub Actions): set repository secrets/vars.
 
 ## Usage
 
 ### Building the documentation
 
-Run `npm run build` to build the documentation. This will generate a `docs` folder containing the documentation.
+Run `npm run build` to build the documentation.
+The build now checks S3 (`aws s3 ls`) and generates only versions that are missing remotely.
+Use `npm run build:dry` to preview which `module version` entries would be generated and uploaded.
 
 ### Uploading the documentation
 
-Run `npm run sync` to upload the documentation to the bucket. This will upload the `docs` folder to the bucket.
+Run `npm run sync` to upload only missing versions to S3.
+Static files (`index.html`, `style.css`, `diff.html`, `diff.json`, module `index.html`) are always refreshed.
+Use `npm run sync:dry` to preview exact S3 upload operations.
 
 ### Building and uploading the documentation
 
 Run `npm run all` to build and upload the documentation. This will build the documentation and upload it to the bucket.
+Use `npm run all:dry` for a full dry-run.
+
+### Failed versions and retry
+
+Failed versions are stored in `failed.txt`.
+To retry a version locally, remove its line from `failed.txt` and run `npm run build` again.
+
+### Required env vars
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+
+### Optional env vars
+
+- `S3_DOCS_BUCKET` (default: `stirante.com`)
+- `S3_DOCS_PREFIX` (default: `script`)
+- `CLOUDFRONT_DISTRIBUTION_ID`
 
 ## Contributing
 

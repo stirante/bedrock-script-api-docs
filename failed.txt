@@ -1,0 +1,9 @@
+server 1.0.0-beta.00001b01
+server 1.0.0-beta.00001b50
+server 1.0.0-beta.11940b23
+server-ui 1.0.0-beta.00001b01
+server-ui 1.0.0-beta.00001b50
+server-ui 1.0.0-beta.11940b23
+server-gametest 1.0.0-beta.00001b01
+server-gametest 1.0.0-beta.00001b50
+server-gametest 1.0.0-beta.11940b23

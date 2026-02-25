@@ -2,10 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { compareVersions } from './sort_utils.js';
 import { fetchNpmPackage, fetchNpmPackageVersion } from './npm_utils.js';
-import { generateTypeDoc, generateOnlyStructure } from './docgen.js';
+import { generateTypeDoc } from './docgen.js';
 import template from './template.js';
+import { loadEnvFile } from './env.js';
+import { listRemoteDirectories } from './s3_utils.js';
 
 const isNoFail = process.argv.includes('--no-fail');
+const isDryRun = process.argv.includes('--dry-run');
+loadEnvFile();
 
 function createRedirect(tag, tags, pack, availableVersions) {
   if (tags[tag] && availableVersions.indexOf(tags[tag]) !== -1) {
@@ -87,23 +91,35 @@ const packages = [
 ]
 
 const diffInfo = {};
+const plannedGenerations = [];
 
 // A list of failed packages. If a package fails to generate docs, it will be added to this list and never tried again.
 let failed = [];
 if (fs.existsSync('./failed.txt')) {
-  failed = fs.readFileSync('./failed.txt', 'utf-8').split('\n');
+  failed = fs.readFileSync('./failed.txt', 'utf-8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 // Generate the main index.html file
 let moduleList = "";
 
 for (const p of packages) {
+  const remoteVersions = listRemoteDirectories(p.path);
+  const availableVersionsSet = new Set();
+
+  if (!isDryRun) {
+    fs.mkdirSync(`./docs/${p.path}`, { recursive: true });
+  }
+
   if (!p.skipStructure) {
     diffInfo[p.name] = {
       versions: [],
       path: p.path
     }
   }
+
   let pack = await fetchNpmPackage(p.name);
   for (const version in pack.versions) {
     // Skip deprecated versions
@@ -115,37 +131,55 @@ for (const p of packages) {
       continue;
     }
 
+    if (remoteVersions.has(version)) {
+      availableVersionsSet.add(version);
+      continue;
+    }
+
     // This is only for regenerating structure.json files
     // if (!p.skipStructure) {
     //   await generateOnlyStructure(p.path, p.name, version, p.main ?? "index.d.ts");
     // }
 
-    // Skip if the docs already exist
     if (fs.existsSync(`./docs/${p.path}/${version}`)) {
+      availableVersionsSet.add(version);
       continue;
     }
+
+    if (isDryRun) {
+      plannedGenerations.push(`${p.path} ${version}`);
+      availableVersionsSet.add(version);
+      continue;
+    }
+
     // Download the tarball and generate the docs
     await fetchNpmPackageVersion(p.name, version)
       .then(([data, version]) => {
         const url = data.dist.tarball;
         return generateTypeDoc(p.path, p.name, url, version, p.main ?? "index.d.ts", !!p.skipStructure, failed);
       });
+
+    if (failed.indexOf(p.path + ' ' + version) === -1 && fs.existsSync(`./docs/${p.path}/${version}`)) {
+      availableVersionsSet.add(version);
+    }
   }
 
   // Generate the index.html file for a package
-  let availableVersions = fs.readdirSync('./docs/' + p.path).filter((file) => {
-    return fs.statSync(`./docs/${p.path}/${file}`).isDirectory();
-  }).sort(compareVersions)
+  let availableVersions = Array.from(availableVersionsSet)
+    .sort(compareVersions)
     .reverse();
   if (!p.skipStructure) {
     diffInfo[p.name].versions = availableVersions;
+  }
+
+  if (isDryRun) {
+    continue;
   }
 
   let dist = pack['dist-tags'] || {};
   let latestLink = createRedirect('latest', dist, p, availableVersions);
   let betaLink = createRedirect('beta', dist, p, availableVersions);
   let rcLink = createRedirect('rc', dist, p, availableVersions);
-
   let index = template('module_index.html', {
     title: p.name,
     list: availableVersions
@@ -164,6 +198,14 @@ for (const p of packages) {
     path: `/script/${p.path}`,
     links: links
   });
+}
+
+if (isDryRun) {
+  console.log(`Dry run: ${plannedGenerations.length} versions would be generated and uploaded:`);
+  for (const entry of plannedGenerations) {
+    console.log(`- ${entry}`);
+  }
+  process.exit(0);
 }
 
 // Write the main index.html file

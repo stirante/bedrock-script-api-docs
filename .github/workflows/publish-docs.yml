@@ -1,0 +1,63 @@
+name: Publish Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 19 * * 1-5'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure AWS CLI
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y awscli
+          fi
+          aws --version
+
+      - name: Build missing versions
+        run: npm run build
+
+      - name: Upload missing versions
+        run: npm run sync
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+          S3_DOCS_BUCKET: ${{ vars.S3_DOCS_BUCKET }}
+          S3_DOCS_PREFIX: ${{ vars.S3_DOCS_PREFIX }}
+
+      - name: Commit failed.txt updates
+        run: |
+          if git diff --quiet -- failed.txt; then
+            echo "No failed.txt changes"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add failed.txt
+          git commit -m "chore: update failed.txt"
+          git push
