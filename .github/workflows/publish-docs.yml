@@ -14,6 +14,7 @@ permissions:
 jobs:
   build-and-sync:
     runs-on: ubuntu-latest
+    environment: aws
 
     steps:
       - name: Checkout
@@ -36,12 +37,25 @@ jobs:
           fi
           aws --version
 
+      - name: Validate AWS credentials
+        run: |
+          test -n "$AWS_ACCESS_KEY_ID" || (echo "Missing AWS_ACCESS_KEY_ID secret" && exit 1)
+          test -n "$AWS_SECRET_ACCESS_KEY" || (echo "Missing AWS_SECRET_ACCESS_KEY secret" && exit 1)
+          test -n "$AWS_REGION" || (echo "Missing AWS_REGION secret" && exit 1)
+          aws sts get-caller-identity >/dev/null
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+
       - name: Upload missing versions
         run: npm run all
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
           CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
           S3_DOCS_BUCKET: ${{ vars.S3_DOCS_BUCKET }}
           S3_DOCS_PREFIX: ${{ vars.S3_DOCS_PREFIX }}
