@@ -126,11 +126,6 @@ for (const p of packages) {
     if (pack.versions[version].deprecated) {
       continue;
     }
-    // Skip if it failed before
-    if (failed.indexOf(p.path + ' ' + version) !== -1) {
-      continue;
-    }
-
     if (remoteVersions.has(version)) {
       availableVersionsSet.add(version);
       continue;
@@ -143,6 +138,11 @@ for (const p of packages) {
 
     if (fs.existsSync(`./docs/${p.path}/${version}`)) {
       availableVersionsSet.add(version);
+      continue;
+    }
+
+    // Skip generating versions that failed before and are still missing.
+    if (failed.indexOf(p.path + ' ' + version) !== -1) {
       continue;
     }
 

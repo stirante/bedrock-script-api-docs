@@ -7,6 +7,7 @@ import { listRemoteDirectories, s3Path, s3PrefixPath } from './s3_utils.js';
 loadEnvFile();
 
 const isDryRun = process.argv.includes('--dry-run');
+const moduleFilesOnly = process.argv.includes('--module-files-only');
 const cloudfrontDistributionId = process.env.CLOUDFRONT_DISTRIBUTION_ID?.trim();
 let missingDistributionLogged = false;
 
@@ -40,14 +41,18 @@ for (const file of files) {
 }
 
 function uploadMissingVersions(localModuleDir, modulePath) {
-  const remoteVersions = listRemoteDirectories(modulePath);
+  const remoteVersions = moduleFilesOnly ? new Set() : listRemoteDirectories(modulePath);
   const entries = fs.readdirSync(localModuleDir, { withFileTypes: true });
 
   for (const entry of entries) {
     if (!entry.isDirectory()) {
-      if (entry.name === 'index.html') {
+      if (entry.name.endsWith('.html')) {
         copy(path.join(localModuleDir, entry.name), `${modulePath}/${entry.name}`);
       }
+      continue;
+    }
+
+    if (moduleFilesOnly) {
       continue;
     }
 

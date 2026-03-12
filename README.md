@@ -28,8 +28,9 @@ Use `npm run build:dry` to preview which `module version` entries would be gener
 ### Uploading the documentation
 
 Run `npm run sync` to upload only missing versions to S3.
-Static files (`index.html`, `style.css`, `diff.html`, `diff.json`, module `index.html`) are always refreshed.
+Static files (`index.html`, `style.css`, `diff.html`, `diff.json`, and all module-level files like `latest.html`, `beta.html`, `rc.html`, `index.html`) are always refreshed.
 Use `npm run sync:dry` to preview exact S3 upload operations.
+Use `npm run sync:module-files` to refresh only module-level files (redirects + module index) and invalidate them in CloudFront without syncing version directories.
 
 ### Building and uploading the documentation
 
@@ -40,6 +41,7 @@ Use `npm run all:dry` for a full dry-run.
 
 Failed versions are stored in `failed.txt`.
 To retry a version locally, remove its line from `failed.txt` and run `npm run build` again.
+Use `npm run failed:prune` to automatically remove stale failed entries that already exist locally or on S3.
 
 ### Required env vars
 

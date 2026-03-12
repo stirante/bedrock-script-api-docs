@@ -16,10 +16,13 @@
     "test-build": "node src/main.js --no-fail",
     "sync": "node src/better_sync.js",
     "sync:dry": "node src/better_sync.js --dry-run",
+    "sync:module-files": "node src/better_sync.js --module-files-only",
+    "sync:module-files:dry": "node src/better_sync.js --module-files-only --dry-run",
     "sync-diff": "aws s3 cp ./templates/diff.html s3://stirante.com/script/diff.html",
     "sync-style": "aws s3 cp ./templates/style.css s3://stirante.com/script/style.css",
     "all": "npm run build && npm run sync",
-    "all:dry": "npm run build:dry && npm run sync:dry"
+    "all:dry": "npm run build:dry && npm run sync:dry",
+    "failed:prune": "node src/prune_failed.js"
   },
   "main": "src/main.js",
   "type": "module"
