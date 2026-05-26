@@ -8,3 +8,4 @@ server-gametest 1.0.0-beta.00001b01
 server-gametest 1.0.0-beta.00001b50
 server-gametest 1.0.0-beta.11940b23
 server-net 1.0.0-beta.1.26.30-preview.30
+server-net 1.0.0-beta.1.26.30-preview.32
